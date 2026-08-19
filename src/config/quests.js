@@ -25,5 +25,21 @@ export const QUESTS_CONFIG = [
     unit: 'flips',
     reward: 100,
     getValue: (saveData) => saveData.totalGravityFlips
+  },
+  {
+    id: 3,
+    title: 'Ignite Nitro 5 Times',
+    target: 5,
+    unit: 'boosts',
+    reward: 130,
+    getValue: (saveData) => saveData.totalNitroUsed || 0
+  },
+  {
+    id: 4,
+    title: 'Defeat a Mini-Boss',
+    target: 1,
+    unit: 'bosses',
+    reward: 200,
+    getValue: (saveData) => saveData.bossesDefeated || 0
   }
 ];

@@ -1,6 +1,8 @@
 /**
  * StorageService - Manages game persistence via LocalStorage with schema validation and fallback memory store.
  */
+import { QUESTS_CONFIG } from '../config/quests.js';
+
 export class StorageService {
   constructor() {
     this.key = 'lowpoly_rush_savedata_v2';
@@ -31,8 +33,9 @@ export class StorageService {
         score_booster: false
       },
       achievementsClaimed: [],
+      achievementsNotified: [],
       questDate: '',
-      questClaimed: [false, false, false],
+      questClaimed: new Array(QUESTS_CONFIG.length).fill(false),
       settings: {
         sfxVolume: 80,
         musicVolume: 70,
@@ -58,13 +61,25 @@ export class StorageService {
       if (raw) {
         const parsed = JSON.parse(raw);
         const defaults = this.getDefaults();
+
+        // Safe migration: pad questClaimed to the current quest count (old saves had length 3)
+        const savedClaimed = Array.isArray(parsed.questClaimed) ? parsed.questClaimed : [];
+        const questClaimed = defaults.questClaimed.map((defVal, idx) =>
+          typeof savedClaimed[idx] === 'boolean' ? savedClaimed[idx] : defVal
+        );
+
         this.data = {
           ...defaults,
           ...parsed,
+          questClaimed,
+          achievementsNotified: Array.isArray(parsed.achievementsNotified) ? parsed.achievementsNotified : [],
           upgrades: { ...defaults.upgrades, ...(parsed.upgrades || {}) },
           boosts: { ...defaults.boosts, ...(parsed.boosts || {}) },
           settings: { ...defaults.settings, ...(parsed.settings || {}) }
         };
+
+        // Ежедневная ротация квестов на загрузке (переход через полночь)
+        this.checkDailyQuestsRotation();
       }
     } catch (e) {
       console.warn('[StorageService] Failed to load localStorage data, fallback to defaults:', e);
@@ -83,6 +98,31 @@ export class StorageService {
   reset() {
     this.data = this.getDefaults();
     this.save();
+  }
+
+  /** Локальная календарная дата устройства игрока в формате YYYY-MM-DD (без смещений UTC). */
+  getLocalDateString() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  /**
+   * Ежедневная ротация квестов: при смене календарного дня сбрасывает questClaimed
+   * и фиксирует новую дату. Вызывается на загрузке, при открытии модалки квестов и в меню.
+   */
+  checkDailyQuestsRotation() {
+    const today = this.getLocalDateString();
+    if (this.data.questDate !== today) {
+      this.data.questDate = today;
+      // .map(() => false) — работает с массивом любой длины (добавление квестов не ломает)
+      this.data.questClaimed = this.data.questClaimed.map(() => false);
+      this.save();
+      return true;
+    }
+    return false;
   }
 
   addCoins(amount) {

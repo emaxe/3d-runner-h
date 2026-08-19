@@ -11,10 +11,12 @@ export class QuestsModal {
 
   render() {
     if (!this.container) return;
+    // Сброс квестов при смене дня (игра могла оставаться открытой через полночь)
+    this.game.storage.checkDailyQuestsRotation();
     this.container.innerHTML = '';
 
     for (const q of QUESTS_CONFIG) {
-      const isClaimed = this.game.storage.data.questClaimed[q.id];
+      const isClaimed = Boolean(this.game.storage.data.questClaimed?.[q.id]);
       const cur = q.getValue(this.game.storage.data);
       const progress = Math.min(100, Math.floor((cur / q.target) * 100));
       const canClaim = !isClaimed && cur >= q.target;

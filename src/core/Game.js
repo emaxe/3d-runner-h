@@ -141,6 +141,8 @@ export class Game {
     this.player.model.group.position.set(0, 0.9, 0);
     this.cameraManager.setupMenu();
     this.ui.updateMenuStats();
+    // Ежедневная ротация квестов при возврате в меню
+    this.storage.checkDailyQuestsRotation();
   }
 
   startGame() {
@@ -359,13 +361,37 @@ export class Game {
   }
 
   checkAchievements() {
+    if (!Array.isArray(this.storage.data.achievementsNotified)) {
+      this.storage.data.achievementsNotified = [];
+    }
+
+    const newlyUnlocked = [];
+
     for (const ach of ACHIEVEMENTS) {
-      if (!this.storage.data.achievementsClaimed.includes(ach.id)) {
+      const isClaimed = this.storage.data.achievementsClaimed.includes(ach.id);
+      const isNotified = this.storage.data.achievementsNotified.includes(ach.id);
+
+      if (!isClaimed && !isNotified) {
         const currentVal = this.storage.data[ach.key] || 0;
         if (currentVal >= ach.target) {
-          // Available to claim in modal
+          newlyUnlocked.push(ach);
         }
       }
+    }
+
+    if (newlyUnlocked.length === 1) {
+      const ach = newlyUnlocked[0];
+      this.storage.data.achievementsNotified.push(ach.id);
+      this.ui.showAlert('ACHIEVEMENT UNLOCKED!', ach.name);
+      this.audio.playSound('powerup');
+    } else if (newlyUnlocked.length > 1) {
+      newlyUnlocked.forEach((ach) => this.storage.data.achievementsNotified.push(ach.id));
+      this.ui.showAlert('ACHIEVEMENTS UNLOCKED!', `${newlyUnlocked.length} New Milestones Ready!`);
+      this.audio.playSound('powerup');
+    }
+
+    if (newlyUnlocked.length > 0) {
+      this.storage.save();
     }
   }
 
