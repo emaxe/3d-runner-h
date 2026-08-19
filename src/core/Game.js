@@ -157,6 +157,8 @@ export class Game {
     this.level = 1;
     const hasStartShield = (this.storage.data.upgrades.shield_start || 0) > 0;
     this.player.reset(hasStartShield);
+    // Применяем уровень апгрейда "Hyper Nitro Tank" (длительность буста и перезарядка)
+    this.player.setNitroUpgradeLevel(this.storage.data.upgrades.nitro_eff || 0);
 
     // Boost: Head start
     if (this.storage.data.boosts.head_start) {

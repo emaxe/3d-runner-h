@@ -40,6 +40,7 @@ export class Player {
     this.nitroEnergy = 40;
     this.isNitroActive = false;
     this.nitroTimer = 0;
+    this.nitroLevel = 0; // 0..4 — уровень апгрейда Hyper Nitro Tank
 
     // State & Streaks
     this.isDead = false;
@@ -115,6 +116,11 @@ export class Player {
     this.targetX = (1 - this.currentLane) * CONFIG.LANE_WIDTH;
   }
 
+  /** Устанавливает уровень апгрейда "Hyper Nitro Tank" (0..4). */
+  setNitroUpgradeLevel(level) {
+    this.nitroLevel = Math.max(0, level || 0);
+  }
+
   jump(startJump = true) {
     if (this.isDead) return;
 
@@ -164,8 +170,10 @@ export class Player {
   activateNitro() {
     if (this.isDead || this.isNitroActive || this.nitroEnergy < CONFIG.NITRO_ENERGY_REQ) return;
     this.isNitroActive = true;
-    this.nitroTimer = CONFIG.NITRO_DURATION;
-    this.invulnerableTimer = CONFIG.NITRO_DURATION;
+    // Длительность буста растёт с уровнем апгрейда "Hyper Nitro Tank"
+    const duration = CONFIG.NITRO_DURATION + this.nitroLevel * 0.75;
+    this.nitroTimer = duration;
+    this.invulnerableTimer = duration;
     this.nitroEnergy = 0;
     this.audio.playSound('nitro');
     this.particles.spawn(this.x, this.y, this.z - 0.5, 25, 0x06b6d4, 6);
@@ -363,7 +371,9 @@ export class Player {
         this.isNitroActive = false;
       }
     } else {
-      this.nitroEnergy = Math.min(CONFIG.NITRO_MAX_ENERGY, this.nitroEnergy + dt * CONFIG.NITRO_RECHARGE_RATE);
+      // Скорость перезарядки растёт с уровнем апгрейда "Hyper Nitro Tank"
+      const rechargeRate = CONFIG.NITRO_RECHARGE_RATE + this.nitroLevel * 1.5;
+      this.nitroEnergy = Math.min(CONFIG.NITRO_MAX_ENERGY, this.nitroEnergy + dt * rechargeRate);
     }
 
     // 6b. Running dust puffs
