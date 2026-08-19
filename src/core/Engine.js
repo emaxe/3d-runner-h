@@ -8,6 +8,9 @@ export class Engine {
   constructor(containerElement) {
     this.container = containerElement || document.getElementById('canvas-container');
     
+    // Detect touch device once
+    this.isTouchDevice = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+
     // Scene setup
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(BIOMES[0].skyColor);
@@ -23,12 +26,16 @@ export class Engine {
 
     // WebGL Renderer
     this.renderer = new THREE.WebGLRenderer({
-      antialias: true,
-      powerPreference: 'high-performance',
+      antialias: !this.isTouchDevice,
+      powerPreference: this.isTouchDevice ? 'default' : 'high-performance',
       alpha: false
     });
     this.renderer.setSize(window.innerWidth, window.innerHeight);
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    const initialDpr = this.isTouchDevice
+      ? Math.min(window.devicePixelRatio || 1, 1.5)
+      : Math.min(window.devicePixelRatio || 1, 2);
+    this.maxPixelRatio = initialDpr;
+    this.renderer.setPixelRatio(initialDpr);
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.1;
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -47,7 +54,7 @@ export class Engine {
     // Distant starfield points for depth
     this.starGroup = new THREE.Group();
     const starGeo = new THREE.BufferGeometry();
-    const starCount = 400;
+    const starCount = this.isTouchDevice ? 150 : 400;
     const positions = new Float32Array(starCount * 3);
     const colors = new Float32Array(starCount * 3);
     for (let i = 0; i < starCount; i++) {
@@ -91,19 +98,35 @@ export class Engine {
   }
 
   setQuality(preset) {
+    this.quality = preset;
+    let targetDpr;
     switch (preset) {
       case 'low':
-        this.renderer.setPixelRatio(1);
+        targetDpr = this.isTouchDevice ? 0.85 : 1.0;
         break;
       case 'med':
-        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+        targetDpr = this.isTouchDevice ? 1.0 : 1.5;
         break;
       case 'high':
       default:
-        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        targetDpr = this.isTouchDevice ? 1.5 : 2.0;
         break;
     }
+    const deviceDpr = window.devicePixelRatio || 1;
+    this.maxPixelRatio = Math.max(0.8, Math.min(deviceDpr, targetDpr));
+    this.renderer.setPixelRatio(this.maxPixelRatio);
     this.onWindowResize();
+  }
+
+  setAdaptivePixelRatio(ratio) {
+    const max = this.maxPixelRatio || (this.isTouchDevice ? Math.min(window.devicePixelRatio || 1, 1.5) : Math.min(window.devicePixelRatio || 1, 2));
+    const clamped = Math.max(0.75, Math.min(max, ratio));
+    this.renderer.setPixelRatio(clamped);
+    this.renderer.setSize(window.innerWidth, window.innerHeight);
+  }
+
+  getCurrentPixelRatio() {
+    return this.renderer.getPixelRatio();
   }
 
   setBiomeVisuals(biome) {

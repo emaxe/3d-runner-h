@@ -20,6 +20,19 @@ export class UIManager {
     this.alertTimeout = null;
     this.currentSkinIndex = 0;
 
+    // HUD Dirty-checking cache to avoid redundant DOM writes each frame
+    this._hudCache = {
+      distance: -1,
+      coins: -1,
+      level: -1,
+      combo: -1,
+      nitroPct: -1,
+      nitroState: '',
+      bossActive: false,
+      bossHp: -1,
+      powerups: ''
+    };
+
     this.initScreensAndButtons();
     this.initSkinSelector();
     this.initModals();
@@ -183,84 +196,132 @@ export class UIManager {
   }
 
   updateHUD(distance, coins, player, boss, level = 1) {
-    // Distance & Multiplier
-    const distEl = document.getElementById('hud-distance');
-    if (distEl) {
-      distEl.innerHTML = `${Math.floor(distance)} <span class="text-lg text-cyan-400 font-normal">m</span>`;
+    // Distance
+    const d = Math.floor(distance);
+    if (d !== this._hudCache.distance) {
+      const distEl = document.getElementById('hud-distance');
+      if (distEl) {
+        distEl.innerHTML = `${d} <span class="text-lg text-cyan-400 font-normal">m</span>`;
+      }
+      this._hudCache.distance = d;
     }
 
-    const levelEl = document.getElementById('hud-level');
-    if (levelEl) levelEl.textContent = level;
+    // Level
+    if (level !== this._hudCache.level) {
+      const levelEl = document.getElementById('hud-level');
+      if (levelEl) levelEl.textContent = level;
+      this._hudCache.level = level;
+    }
 
-    const coinsEl = document.getElementById('hud-coins');
-    if (coinsEl) coinsEl.textContent = coins;
+    // Coins
+    const c = Math.floor(coins);
+    if (c !== this._hudCache.coins) {
+      const coinsEl = document.getElementById('hud-coins');
+      if (coinsEl) coinsEl.textContent = c;
+      this._hudCache.coins = c;
+    }
 
-    const multEl = document.getElementById('hud-multiplier');
-    if (multEl) multEl.textContent = `x${player.combo}`;
+    // Multiplier / Combo
+    if (player.combo !== this._hudCache.combo) {
+      const multEl = document.getElementById('hud-multiplier');
+      if (multEl) multEl.textContent = `x${player.combo}`;
+      this._hudCache.combo = player.combo;
+    }
 
     // Nitro Bar
-    const nitroFill = document.getElementById('hud-nitro-fill');
-    if (nitroFill) nitroFill.style.width = `${player.nitroEnergy}%`;
+    const nitroPct = Math.floor(player.nitroEnergy);
+    if (nitroPct !== this._hudCache.nitroPct) {
+      const nitroFill = document.getElementById('hud-nitro-fill');
+      if (nitroFill) nitroFill.style.width = `${nitroPct}%`;
+      this._hudCache.nitroPct = nitroPct;
+    }
 
-    const nitroReady = document.getElementById('hud-nitro-ready');
-    if (nitroReady) {
-      if (player.isNitroActive) {
-        nitroReady.textContent = 'BOOSTING!';
-        nitroReady.className =
-          'text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 bg-amber-500/30 text-amber-300 rounded border border-amber-500/60 animate-pulse';
-      } else if (player.nitroEnergy >= 30) {
-        nitroReady.textContent = 'READY [F]';
-        nitroReady.className =
-          'text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 bg-cyan-500/20 text-cyan-300 rounded border border-cyan-500/40';
-      } else {
-        nitroReady.textContent = 'CHARGING';
-        nitroReady.className =
-          'text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 bg-slate-700/40 text-slate-400 rounded border border-slate-700';
+    let nitroState = 'charging';
+    if (player.isNitroActive) {
+      nitroState = 'boosting';
+    } else if (player.nitroEnergy >= 30) {
+      nitroState = 'ready';
+    }
+
+    if (nitroState !== this._hudCache.nitroState) {
+      const nitroReady = document.getElementById('hud-nitro-ready');
+      if (nitroReady) {
+        if (nitroState === 'boosting') {
+          nitroReady.textContent = 'BOOSTING!';
+          nitroReady.className =
+            'text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 bg-amber-500/30 text-amber-300 rounded border border-amber-500/60 animate-pulse';
+        } else if (nitroState === 'ready') {
+          nitroReady.textContent = 'READY [F]';
+          nitroReady.className =
+            'text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 bg-cyan-500/20 text-cyan-300 rounded border border-cyan-500/40';
+        } else {
+          nitroReady.textContent = 'CHARGING';
+          nitroReady.className =
+            'text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 bg-slate-700/40 text-slate-400 rounded border border-slate-700';
+        }
       }
+      this._hudCache.nitroState = nitroState;
     }
 
     // Boss Bar
-    const bossContainer = document.getElementById('hud-boss-bar-container');
-    if (bossContainer) {
-      if (boss && boss.active) {
-        bossContainer.classList.remove('hidden');
+    const isBossActive = Boolean(boss && boss.active);
+    if (isBossActive !== this._hudCache.bossActive) {
+      const bossContainer = document.getElementById('hud-boss-bar-container');
+      if (bossContainer) {
+        if (isBossActive) {
+          bossContainer.classList.remove('hidden');
+        } else {
+          bossContainer.classList.add('hidden');
+        }
+      }
+      this._hudCache.bossActive = isBossActive;
+      if (!isBossActive) {
+        this._hudCache.bossHp = -1;
+      }
+    }
+
+    if (isBossActive) {
+      const pct = Math.max(0, Math.floor((boss.hp / boss.maxHp) * 100));
+      if (pct !== this._hudCache.bossHp) {
         const bossNameEl = document.getElementById('hud-boss-name');
         if (bossNameEl) bossNameEl.textContent = `BOSS: ${boss.name}`;
 
-        const pct = Math.max(0, Math.floor((boss.hp / boss.maxHp) * 100));
         const bossHpText = document.getElementById('hud-boss-hp-text');
         if (bossHpText) bossHpText.textContent = `${pct}%`;
 
         const bossHpFill = document.getElementById('hud-boss-hp-fill');
         if (bossHpFill) bossHpFill.style.width = `${pct}%`;
-      } else {
-        bossContainer.classList.add('hidden');
+
+        this._hudCache.bossHp = pct;
       }
     }
 
     // Powerups List
-    const pList = document.getElementById('hud-powerups-list');
-    if (pList) {
-      let html = '';
-      if (player.hasShield) {
-        html += `<div class="px-2.5 py-1 rounded-xl bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 text-xs font-bold font-gaming flex items-center space-x-1"><span>🛡️</span><span>SHIELD</span></div>`;
+    const hasShield = Boolean(player.hasShield);
+    const mag = player.magnetTimer > 0 ? Math.ceil(player.magnetTimer) : 0;
+    const mult = player.multiplierTimer > 0 ? Math.ceil(player.multiplierTimer) : 0;
+    const slow = player.slowmoTimer > 0 ? Math.ceil(player.slowmoTimer) : 0;
+    const powerupsHash = `${hasShield ? 1 : 0}_${mag}_${mult}_${slow}`;
+
+    if (powerupsHash !== this._hudCache.powerups) {
+      const pList = document.getElementById('hud-powerups-list');
+      if (pList) {
+        let html = '';
+        if (hasShield) {
+          html += `<div class="px-2.5 py-1 rounded-xl bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 text-xs font-bold font-gaming flex items-center space-x-1"><span>🛡️</span><span>SHIELD</span></div>`;
+        }
+        if (mag > 0) {
+          html += `<div class="px-2.5 py-1 rounded-xl bg-rose-500/20 text-rose-300 border border-rose-500/40 text-xs font-bold font-gaming flex items-center space-x-1"><span>🧲</span><span>${mag}s</span></div>`;
+        }
+        if (mult > 0) {
+          html += `<div class="px-2.5 py-1 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs font-bold font-gaming flex items-center space-x-1"><span>⭐ x2</span><span>${mult}s</span></div>`;
+        }
+        if (slow > 0) {
+          html += `<div class="px-2.5 py-1 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-xs font-bold font-gaming flex items-center space-x-1"><span>⏳ SLOW</span><span>${slow}s</span></div>`;
+        }
+        pList.innerHTML = html;
       }
-      if (player.magnetTimer > 0) {
-        html += `<div class="px-2.5 py-1 rounded-xl bg-rose-500/20 text-rose-300 border border-rose-500/40 text-xs font-bold font-gaming flex items-center space-x-1"><span>🧲</span><span>${Math.ceil(
-          player.magnetTimer
-        )}s</span></div>`;
-      }
-      if (player.multiplierTimer > 0) {
-        html += `<div class="px-2.5 py-1 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs font-bold font-gaming flex items-center space-x-1"><span>⭐ x2</span><span>${Math.ceil(
-          player.multiplierTimer
-        )}s</span></div>`;
-      }
-      if (player.slowmoTimer > 0) {
-        html += `<div class="px-2.5 py-1 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-xs font-bold font-gaming flex items-center space-x-1"><span>⏳ SLOW</span><span>${Math.ceil(
-          player.slowmoTimer
-        )}s</span></div>`;
-      }
-      pList.innerHTML = html;
+      this._hudCache.powerups = powerupsHash;
     }
   }
 

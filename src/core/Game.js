@@ -53,6 +53,13 @@ export class Game {
     this.currentBiomeIndex = 0;
     this.level = 1; // текущий уровень (растёт после каждого босса)
 
+    // Watchdog & HUD throttling
+    this.adaptivePx = null;
+    this.fpsWindow = [];
+    this.lastAdaptiveChangeTime = 0;
+    this.stableFpsFrames = 0;
+    this.hudTimer = 0;
+
     // 6. Bind Input to Player actions
     this.bindInputs();
 
@@ -480,8 +487,49 @@ export class Game {
       // 7. Dynamic Camera
       this.cameraManager.update(dt, this.player, this.player.isNitroActive);
 
-      // 8. Update HUD
-      this.ui.updateHUD(this.distance, this.coinsGathered, this.player, this.boss, this.level);
+      // FPS Watchdog for adaptive resolution
+      this.fpsWindow.push(dt);
+      if (this.fpsWindow.length > 45) {
+        this.fpsWindow.shift();
+      }
+
+      if (this.fpsWindow.length >= 30) {
+        const sumDt = this.fpsWindow.reduce((a, b) => a + b, 0);
+        const avgDt = sumDt / this.fpsWindow.length;
+        const timeSinceLastChange = timestamp - this.lastAdaptiveChangeTime;
+
+        if (avgDt > 0.028 && timeSinceLastChange >= 2500) {
+          const currentDpr = this.engine.getCurrentPixelRatio();
+          if (currentDpr > 0.75) {
+            const newDpr = Math.max(0.75, currentDpr * 0.9);
+            this.engine.setAdaptivePixelRatio(newDpr);
+            this.lastAdaptiveChangeTime = timestamp;
+            this.fpsWindow.length = 0;
+            this.stableFpsFrames = 0;
+          }
+        } else if (avgDt < 0.016 && timeSinceLastChange >= 2500) {
+          this.stableFpsFrames += this.fpsWindow.length;
+          this.fpsWindow.length = 0;
+          if (this.stableFpsFrames >= 60) {
+            const currentDpr = this.engine.getCurrentPixelRatio();
+            if (this.engine.maxPixelRatio && currentDpr < this.engine.maxPixelRatio) {
+              const newDpr = Math.min(this.engine.maxPixelRatio, currentDpr * 1.1);
+              this.engine.setAdaptivePixelRatio(newDpr);
+              this.lastAdaptiveChangeTime = timestamp;
+            }
+            this.stableFpsFrames = 0;
+          }
+        } else if (avgDt >= 0.017) {
+          this.stableFpsFrames = 0;
+        }
+      }
+
+      // 8. Update HUD (throttled ~20Hz / 0.05s)
+      this.hudTimer += dt;
+      if (this.hudTimer >= 0.05) {
+        this.hudTimer = 0;
+        this.ui.updateHUD(this.distance, this.coinsGathered, this.player, this.boss, this.level);
+      }
     } else if (this.state === 'GAMEOVER') {
       const dtSlow = dt * 0.75;
       this.player.updateDeath(dtSlow);

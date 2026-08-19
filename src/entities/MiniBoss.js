@@ -26,6 +26,10 @@ export class MiniBoss {
     this.chargeFlash = 0; // 0..1 — вспышка зарядки перед выстрелом
     this.eyeFlashTimer = 0; // таймер вспышки глаза при уроне
 
+    // Shared projectile geometry and material (zero-allocation combat loop)
+    this.projectileGeo = new THREE.DodecahedronGeometry(0.5, 0);
+    this.projectileMat = new THREE.MeshBasicMaterial({ color: 0xef4444 });
+
     this.buildModel();
     this.scene.add(this.group);
     this.group.visible = false;
@@ -418,9 +422,7 @@ export class MiniBoss {
     const len = Math.hypot(dx, dy, dz) || 1;
     const speed = 42;
 
-    const geo = new THREE.DodecahedronGeometry(0.5, 0);
-    const mat = new THREE.MeshBasicMaterial({ color: 0xef4444 });
-    const mesh = new THREE.Mesh(geo, mat);
+    const mesh = new THREE.Mesh(this.projectileGeo, this.projectileMat);
     mesh.position.set(startX, startY, startZ);
     this.scene.add(mesh);
     this.bossProjectiles.push({

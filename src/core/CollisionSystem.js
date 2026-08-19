@@ -25,6 +25,8 @@ export class CollisionSystem {
         obs.hitbox.maxY = obs.mesh.position.y + 0.5;
       }
 
+      if (Math.abs(obs.hitbox.minZ - player.z) > 16) continue;
+
       const h = obs.hitbox;
       if (
         pHitbox.maxX >= h.minX &&
@@ -43,6 +45,8 @@ export class CollisionSystem {
     for (let i = 0; i < levelGen.coins.length; i++) {
       const c = levelGen.coins[i];
       if (!c.active) continue;
+
+      if (Math.abs(c.z - player.z) > magnetRadius + 2) continue;
 
       const cPos = c.mesh.position;
       const dx = cPos.x - player.x;
@@ -67,6 +71,8 @@ export class CollisionSystem {
     for (let i = 0; i < levelGen.powerups.length; i++) {
       const p = levelGen.powerups[i];
       if (!p.active) continue;
+
+      if (Math.abs(p.z - player.z) > 10) continue;
 
       const pPos = p.mesh.position;
       const dx = pPos.x - player.x;

@@ -54,7 +54,17 @@ export class LevelGenerator {
       floatingOrbMat: new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.8 }),
       ventMat: new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.6, metalness: 0.4, flatShading: true }),
       ventGlowMat: new THREE.MeshBasicMaterial({ color: 0x38bdf8 }),
-      floorLightMat: new THREE.MeshBasicMaterial({ color: 0x06b6d4, transparent: true, opacity: 0.7 })
+      floorLightMat: new THREE.MeshBasicMaterial({ color: 0x06b6d4, transparent: true, opacity: 0.7 }),
+      sceneryBush: new THREE.MeshStandardMaterial({ color: 0x10b981, roughness: 0.6, flatShading: true }),
+      sceneryDune: new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.9, flatShading: true }),
+      sceneryIceSpike: new THREE.MeshStandardMaterial({ color: 0xa5f3fc, roughness: 0.3, flatShading: true }),
+      sceneryMagmaPool: new THREE.MeshBasicMaterial({ color: 0xfacc15, transparent: true, opacity: 0.6 }),
+      powerups: {
+        shield: new THREE.MeshBasicMaterial({ color: 0x38bdf8 }),
+        magnet: new THREE.MeshBasicMaterial({ color: 0xf43f5e }),
+        multiplier: new THREE.MeshBasicMaterial({ color: 0xfacc15 }),
+        slowmo: new THREE.MeshBasicMaterial({ color: 0x22c55e })
+      }
     };
 
     this.geos = {
@@ -94,7 +104,11 @@ export class LevelGenerator {
       ventGrille: new THREE.BoxGeometry(0.5, 0.5, 0.1),
       ventSlat: new THREE.BoxGeometry(0.4, 0.06, 0.12),
       energyCable: new THREE.CylinderGeometry(0.05, 0.05, 1, 4),
-      floorLight: new THREE.BoxGeometry(0.3, 0.06, 0.3)
+      floorLight: new THREE.BoxGeometry(0.3, 0.06, 0.3),
+      bush: new THREE.IcosahedronGeometry(0.4, 0),
+      dune: new THREE.ConeGeometry(1.2, 0.6, 4),
+      iceSpike: new THREE.ConeGeometry(0.3, 1.0, 4),
+      magmaPool: new THREE.CircleGeometry(0.8, 6)
     };
 
     this.geos.coinCore.rotateX(Math.PI / 2);
@@ -267,10 +281,8 @@ export class LevelGenerator {
         chunkGroup.add(rock);
 
         // Extra: small glowing bushes near the track
-        const bushGeo = new THREE.IcosahedronGeometry(0.4, 0);
-        const bushMat = new THREE.MeshStandardMaterial({ color: 0x10b981, roughness: 0.6, flatShading: true });
         for (let b = 0; b < 3; b++) {
-          const bush = new THREE.Mesh(bushGeo, bushMat);
+          const bush = new THREE.Mesh(this.geos.bush, this.materials.sceneryBush);
           const bushSide = b % 2 === 0 ? -1 : 1;
           bush.position.set(bushSide * (railX + 0.5 + Math.random() * 1.5), 0.3, sideZ + (b - 1) * 1.2);
           bush.scale.setScalar(0.6 + Math.random() * 0.5);
@@ -290,10 +302,8 @@ export class LevelGenerator {
         chunkGroup.add(pillar);
 
         // Extra: small sand dunes (flattened rocks)
-        const duneGeo = new THREE.ConeGeometry(1.2, 0.6, 4);
-        const duneMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.9, flatShading: true });
         for (let d = 0; d < 2; d++) {
-          const dune = new THREE.Mesh(duneGeo, duneMat);
+          const dune = new THREE.Mesh(this.geos.dune, this.materials.sceneryDune);
           const duneSide = d % 2 === 0 ? -1 : 1;
           dune.position.set(duneSide * (railX + 1.0 + Math.random() * 2), 0.3, sideZ + (d - 0.5) * 2);
           dune.rotation.y = Math.random() * Math.PI;
@@ -314,10 +324,8 @@ export class LevelGenerator {
         chunkGroup.add(iceR);
 
         // Extra: small ice spikes on the ground
-        const spikeGeo = new THREE.ConeGeometry(0.3, 1.0, 4);
-        const spikeMat = new THREE.MeshStandardMaterial({ color: 0xa5f3fc, roughness: 0.3, flatShading: true });
         for (let sp = 0; sp < 3; sp++) {
-          const spike = new THREE.Mesh(spikeGeo, spikeMat);
+          const spike = new THREE.Mesh(this.geos.iceSpike, this.materials.sceneryIceSpike);
           const spikeSide = sp % 2 === 0 ? -1 : 1;
           spike.position.set(spikeSide * (railX + 0.8 + Math.random() * 1.5), 0.5, sideZ + (sp - 1) * 1.5);
           spike.rotation.y = Math.random() * Math.PI;
@@ -335,10 +343,8 @@ export class LevelGenerator {
         chunkGroup.add(lavaRock);
 
         // Extra: glowing magma pools
-        const poolGeo = new THREE.CircleGeometry(0.8, 6);
-        const poolMat = new THREE.MeshBasicMaterial({ color: 0xfacc15, transparent: true, opacity: 0.6 });
         for (let p = 0; p < 2; p++) {
-          const pool = new THREE.Mesh(poolGeo, poolMat);
+          const pool = new THREE.Mesh(this.geos.magmaPool, this.materials.sceneryMagmaPool);
           const poolSide = p % 2 === 0 ? -1 : 1;
           pool.rotation.x = -Math.PI / 2;
           pool.position.set(poolSide * (railX + 0.8 + Math.random() * 1.5), 0.05, sideZ + (p - 0.5) * 2);
@@ -581,8 +587,7 @@ export class LevelGenerator {
           if (Math.random() < 0.12) {
             const types = ['magnet', 'shield', 'multiplier', 'slowmo'];
             const pType = types[Math.floor(Math.random() * types.length)];
-            const colorMap = { shield: 0x38bdf8, magnet: 0xf43f5e, multiplier: 0xfacc15, slowmo: 0x22c55e };
-            const pMesh = new THREE.Mesh(this.geos.powerup, new THREE.MeshBasicMaterial({ color: colorMap[pType] }));
+            const pMesh = new THREE.Mesh(this.geos.powerup, this.materials.powerups[pType]);
             pMesh.position.set(x, 1.2, z);
             chunkGroup.add(pMesh);
             this.powerups.push({ mesh: pMesh, type: pType, active: true, z, isCeiling: false });
@@ -753,6 +758,11 @@ export class LevelGenerator {
         const newChunk = this.createChunk(this.currentChunkIndex, level);
         this.activeChunks.push(newChunk);
         this.currentChunkIndex++;
+
+        this.obstacles = this.obstacles.filter(o => o.hitbox.maxZ >= playerZ - 25);
+        this.coins = this.coins.filter(c => c.z >= playerZ - 25);
+        this.powerups = this.powerups.filter(p => p.z >= playerZ - 25);
+        this.ambientOrbs = this.ambientOrbs.filter(orb => orb.position.z >= playerZ - 25);
       }
     }
 

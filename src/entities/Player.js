@@ -58,6 +58,9 @@ export class Player {
     // Blaster Projectiles
     this.projectiles = [];
     this.shootCooldown = 0;
+    this.blasterGeo = new THREE.CylinderGeometry(0.08, 0.08, 0.8, 6);
+    this.blasterGeo.rotateX(Math.PI / 2);
+    this.blasterMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
   }
 
   reset(startWithShield = false) {
@@ -170,10 +173,7 @@ export class Player {
 
   shootBlaster() {
     if (this.isDead) return;
-    const geo = new THREE.CylinderGeometry(0.08, 0.08, 0.8, 6);
-    geo.rotateX(Math.PI / 2);
-    const mat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
-    const mesh = new THREE.Mesh(geo, mat);
+    const mesh = new THREE.Mesh(this.blasterGeo, this.blasterMat);
     mesh.position.set(this.x, this.y, this.z + 1.2);
     this.scene.add(mesh);
     this.projectiles.push({ mesh, speed: 65, life: 1.2 });
