@@ -23,6 +23,9 @@ export class CollisionSystem {
         obs.mesh.position.y = obs.startY + Math.sin(obs.timeOffset * 4) * 0.7;
         obs.hitbox.minY = obs.mesh.position.y - 0.5;
         obs.hitbox.maxY = obs.mesh.position.y + 0.5;
+        // Визуальное вращение кольца/корпуса
+        if (obs.mesh.children[1]) obs.mesh.children[1].rotation.z += 2.0 * dt;
+        if (obs.mesh.children[0]) obs.mesh.children[0].rotation.y += 1.5 * dt;
       }
 
       if (Math.abs(obs.hitbox.minZ - player.z) > 16) continue;

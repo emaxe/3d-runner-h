@@ -518,7 +518,7 @@ export class LevelGenerator {
 
         if (lane !== freeFloorLane) {
           const obsType = Math.random();
-          if (obsType < 0.4) {
+          if (obsType < 0.35) {
             // Detailed Low Barrier (Jump over)
             const barrierGrp = new THREE.Group();
             barrierGrp.position.set(x, 0, z);
@@ -538,7 +538,7 @@ export class LevelGenerator {
               type: 'jump',
               hitbox: { minX: x - 1.1, maxX: x + 1.1, minY: 0, maxY: 0.8, minZ: z - 0.3, maxZ: z + 0.3 }
             });
-          } else if (obsType < 0.75) {
+          } else if (obsType < 0.65) {
             // High Laser Barrier (Slide under)
             const barrierGrp = new THREE.Group();
             barrierGrp.position.set(x, 0, z);
@@ -561,7 +561,7 @@ export class LevelGenerator {
               type: 'slide',
               hitbox: { minX: x - 1.1, maxX: x + 1.1, minY: 1.1, maxY: 2.9, minZ: z - 0.3, maxZ: z + 0.3 }
             });
-          } else {
+          } else if (obsType < 0.88) {
             // Metallic Spike Cluster with Glowing Tips
             const spikeGrp = new THREE.Group();
             spikeGrp.position.set(x, 0, z);
@@ -580,6 +580,28 @@ export class LevelGenerator {
               mesh: spikeGrp,
               type: 'spike',
               hitbox: { minX: x - 0.9, maxX: x + 0.9, minY: 0, maxY: 1.1, minZ: z - 0.3, maxZ: z + 0.3 }
+            });
+          } else {
+            // Hovering Enemy Drone (Slide under or dodge lane)
+            const droneMesh = this.createDroneMesh();
+            const startY = 2.05;
+            const timeOffset = Math.random() * Math.PI * 2;
+            droneMesh.position.set(x, startY, z);
+            chunkGroup.add(droneMesh);
+
+            this.obstacles.push({
+              mesh: droneMesh,
+              type: 'drone',
+              startY,
+              timeOffset,
+              hitbox: {
+                minX: x - 0.8,
+                maxX: x + 0.8,
+                minY: startY - 0.5,
+                maxY: startY + 0.5,
+                minZ: z - 0.4,
+                maxZ: z + 0.4
+              }
             });
           }
         } else {
@@ -663,7 +685,7 @@ export class LevelGenerator {
       const extraLane = Math.floor(Math.random() * 3);
       const x = laneXs[extraLane];
       const roll = Math.random();
-      if (roll < 0.4) {
+      if (roll < 0.3) {
         // Дополнительный барьер (прыжок)
         const barrierGrp = new THREE.Group();
         barrierGrp.position.set(x, 0, extraZ);
@@ -680,7 +702,7 @@ export class LevelGenerator {
           type: 'jump',
           hitbox: { minX: x - 1.1, maxX: x + 1.1, minY: 0, maxY: 0.8, minZ: extraZ - 0.3, maxZ: extraZ + 0.3 }
         });
-      } else if (roll < 0.7) {
+      } else if (roll < 0.6) {
         // Дополнительные шипы
         const spikeGrp = new THREE.Group();
         spikeGrp.position.set(x, 0, extraZ);
@@ -698,7 +720,7 @@ export class LevelGenerator {
           type: 'spike',
           hitbox: { minX: x - 0.9, maxX: x + 0.9, minY: 0, maxY: 1.1, minZ: extraZ - 0.3, maxZ: extraZ + 0.3 }
         });
-      } else {
+      } else if (roll < 0.85) {
         // Дополнительный высокий лазер (подкат)
         const barrierGrp = new THREE.Group();
         barrierGrp.position.set(x, 0, extraZ);
@@ -717,6 +739,27 @@ export class LevelGenerator {
           type: 'slide',
           hitbox: { minX: x - 1.1, maxX: x + 1.1, minY: 1.1, maxY: 2.9, minZ: extraZ - 0.3, maxZ: extraZ + 0.3 }
         });
+      } else {
+        // Дополнительный парящий дрон (подкат или смена лейна)
+        const droneMesh = this.createDroneMesh();
+        const startY = 2.05;
+        const timeOffset = Math.random() * Math.PI * 2;
+        droneMesh.position.set(x, startY, extraZ);
+        chunkGroup.add(droneMesh);
+        this.obstacles.push({
+          mesh: droneMesh,
+          type: 'drone',
+          startY,
+          timeOffset,
+          hitbox: {
+            minX: x - 0.8,
+            maxX: x + 0.8,
+            minY: startY - 0.5,
+            maxY: startY + 0.5,
+            minZ: extraZ - 0.4,
+            maxZ: extraZ + 0.4
+          }
+        });
       }
     }
   }
@@ -727,6 +770,30 @@ export class LevelGenerator {
     const rim = new THREE.Mesh(this.geos.coinRim, isGrav ? this.materials.gravRing : this.materials.coinRing);
     group.add(core);
     group.add(rim);
+    return group;
+  }
+
+  /**
+   * Hovering enemy drone — сборка из общих геометрий/материалов (без аллокаций).
+   * Корпус-октаэдр, энергетическое кольцо и сенсорный глаз, направленный на игрока (-Z).
+   */
+  createDroneMesh() {
+    const group = new THREE.Group();
+
+    // Основной октаэдрический корпус
+    const body = new THREE.Mesh(this.geos.droneOcta, this.materials.droneBody);
+
+    // Внешнее энергетическое кольцо
+    const ring = new THREE.Mesh(this.geos.droneRing, this.materials.droneEye);
+    ring.rotation.x = Math.PI / 2;
+
+    // Сенсорный глаз (смотрит на игрока: -Z)
+    const eye = new THREE.Mesh(this.geos.droneEye, this.materials.droneEye);
+    eye.position.set(0, 0, -0.35);
+
+    group.add(body);
+    group.add(ring);
+    group.add(eye);
     return group;
   }
 
