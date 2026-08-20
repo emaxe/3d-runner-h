@@ -19,7 +19,6 @@ export class LevelGenerator {
     this.obstacles = [];
     this.coins = [];
     this.powerups = [];
-    this.ambientOrbs = [];
 
     this.initSharedResources();
   }
@@ -51,7 +50,6 @@ export class LevelGenerator {
       cableMat: new THREE.MeshBasicMaterial({ color: 0x334155 }),
       glowPillarMat: new THREE.MeshBasicMaterial({ color: 0x06b6d4, transparent: true, opacity: 0.7 }),
       glowPillarBaseMat: new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.5, flatShading: true }),
-      floatingOrbMat: new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.8 }),
       ventMat: new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.6, metalness: 0.4, flatShading: true }),
       ventGlowMat: new THREE.MeshBasicMaterial({ color: 0x38bdf8 }),
       floorLightMat: new THREE.MeshBasicMaterial({ color: 0x06b6d4, transparent: true, opacity: 0.7 }),
@@ -102,7 +100,6 @@ export class LevelGenerator {
       cable: new THREE.CylinderGeometry(0.03, 0.03, 1, 4),
       glowPillar: new THREE.CylinderGeometry(0.15, 0.15, 2.5, 6),
       glowPillarBase: new THREE.CylinderGeometry(0.3, 0.4, 0.2, 6),
-      floatingOrb: new THREE.IcosahedronGeometry(0.25, 0),
       ventGrille: new THREE.BoxGeometry(0.5, 0.5, 0.1),
       ventSlat: new THREE.BoxGeometry(0.4, 0.06, 0.12),
       energyCable: new THREE.CylinderGeometry(0.05, 0.05, 1, 4),
@@ -136,7 +133,6 @@ export class LevelGenerator {
       this.materials.sceneryRock.color.setHex(0x334155);
       this.materials.neonSignGlowMat.color.setHex(0x06b6d4);
       this.materials.glowPillarMat.color.setHex(0x06b6d4);
-      this.materials.floatingOrbMat.color.setHex(0x38bdf8);
     } else if (b.id === 'solar_dunes') {
       this.materials.sceneryPrimary.color.setHex(0xd97706);
       this.materials.scenerySecondary.color.setHex(0xf59e0b);
@@ -144,7 +140,6 @@ export class LevelGenerator {
       this.materials.sceneryRock.color.setHex(0x78350f);
       this.materials.neonSignGlowMat.color.setHex(0xfbbf24);
       this.materials.glowPillarMat.color.setHex(0xfbbf24);
-      this.materials.floatingOrbMat.color.setHex(0xfef08a);
     } else if (b.id === 'glacial_peaks') {
       this.materials.sceneryPrimary.color.setHex(0x38bdf8);
       this.materials.scenerySecondary.color.setHex(0xa5f3fc);
@@ -152,7 +147,6 @@ export class LevelGenerator {
       this.materials.sceneryRock.color.setHex(0x1e293b);
       this.materials.neonSignGlowMat.color.setHex(0xa5f3fc);
       this.materials.glowPillarMat.color.setHex(0x38bdf8);
-      this.materials.floatingOrbMat.color.setHex(0xe0f2fe);
     } else {
       // Cyber Volcano
       this.materials.sceneryPrimary.color.setHex(0x7f1d1d);
@@ -161,7 +155,6 @@ export class LevelGenerator {
       this.materials.sceneryRock.color.setHex(0x18000a);
       this.materials.neonSignGlowMat.color.setHex(0xf43f5e);
       this.materials.glowPillarMat.color.setHex(0xfacc15);
-      this.materials.floatingOrbMat.color.setHex(0xf43f5e);
     }
   }
 
@@ -184,17 +177,10 @@ export class LevelGenerator {
     chunkGroup.add(stripeFloorL);
     chunkGroup.add(stripeFloorR);
 
-    // 2. Ceiling Platform & Glowing Stripes
+    // 2. Ceiling Platform (без светящихся полос — они выглядели как лампы и сбивали с толку)
     const ceiling = new THREE.Mesh(this.geos.chunkPlatform, this.materials.ceiling);
     ceiling.position.set(0, CONFIG.CEILING_HEIGHT + 0.25, chunkCenterZ);
     chunkGroup.add(ceiling);
-
-    const stripeCeilL = new THREE.Mesh(this.geos.laneDivider, this.materials.laneStripe);
-    stripeCeilL.position.set(-laneDivOffset, CONFIG.CEILING_HEIGHT - 0.01, chunkCenterZ);
-    const stripeCeilR = new THREE.Mesh(this.geos.laneDivider, this.materials.laneStripe);
-    stripeCeilR.position.set(laneDivOffset, CONFIG.CEILING_HEIGHT - 0.01, chunkCenterZ);
-    chunkGroup.add(stripeCeilL);
-    chunkGroup.add(stripeCeilR);
 
     // 3. Side Guard Rails with Neon Insets
     const railX = CONFIG.LANE_WIDTH * 1.5 + 0.5;
@@ -428,17 +414,6 @@ export class LevelGenerator {
       pillarGroup.add(shaft);
       pillarGroup.position.set(side * (railX + 0.8), 0, pillarZ);
       chunkGroup.add(pillarGroup);
-    }
-
-    // Floating holographic orbs
-    for (let i = 0; i < 2; i++) {
-      const orbZ = zPos + 8 + i * (CONFIG.CHUNK_LENGTH / 2);
-      const orb = new THREE.Mesh(this.geos.floatingOrb, this.materials.floatingOrbMat);
-      orb.position.set((Math.random() - 0.5) * 4, 3.5 + Math.random() * 1.5, orbZ);
-      orb.userData.floatOffset = Math.random() * Math.PI * 2;
-      orb.userData.baseY = orb.position.y;
-      chunkGroup.add(orb);
-      this.ambientOrbs.push(orb);
     }
 
     // Cables connecting side pillars
@@ -807,7 +782,6 @@ export class LevelGenerator {
     this.obstacles = [];
     this.coins = [];
     this.powerups = [];
-    this.ambientOrbs = [];
     this.currentChunkIndex = 0;
 
     for (let i = 0; i < CONFIG.MAX_ACTIVE_CHUNKS; i++) {
@@ -831,7 +805,6 @@ export class LevelGenerator {
         this.obstacles = this.obstacles.filter(o => o.hitbox.maxZ >= playerZ - 25);
         this.coins = this.coins.filter(c => c.z >= playerZ - 25);
         this.powerups = this.powerups.filter(p => p.z >= playerZ - 25);
-        this.ambientOrbs = this.ambientOrbs.filter(orb => orb.position.z >= playerZ - 25);
       }
     }
 
@@ -850,16 +823,6 @@ export class LevelGenerator {
         p.mesh.rotation.y = time * 2.5;
         p.mesh.rotation.x = time * 1.5;
       }
-    }
-
-    // Animate floating ambient orbs
-    for (let i = 0; i < this.ambientOrbs.length; i++) {
-      const orb = this.ambientOrbs[i];
-      const off = orb.userData.floatOffset || 0;
-      const baseY = orb.userData.baseY || 3.5;
-      orb.position.y = baseY + Math.sin(performance.now() * 0.001 + off) * 0.4;
-      orb.rotation.y = time * 1.5;
-      orb.rotation.x = time * 0.8;
     }
   }
 }
