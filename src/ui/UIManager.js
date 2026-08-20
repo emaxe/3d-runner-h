@@ -4,6 +4,7 @@ import { AchievementsModal } from './AchievementsModal.js';
 import { QuestsModal } from './QuestsModal.js';
 import { SettingsModal } from './SettingsModal.js';
 import { StoryModal } from './StoryModal.js';
+import { CutsceneManager } from './CutsceneManager.js';
 import { STORY_PROLOGUE, BIOME_STORY_TOASTS } from '../config/story.js';
 
 /**
@@ -19,6 +20,7 @@ export class UIManager {
     this.quests = new QuestsModal(game);
     this.settings = new SettingsModal(game);
     this.story = new StoryModal(game);
+    this.cutscene = new CutsceneManager(game);
 
     this.alertTimeout = null;
     this.currentSkinIndex = 0;

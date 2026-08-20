@@ -2,7 +2,7 @@ import { CONFIG, COIN_TYPES } from '../config/gameConfig.js';
 import { BIOMES } from '../config/biomes.js';
 import { SKINS } from '../config/skins.js';
 import { ACHIEVEMENTS } from '../config/achievements.js';
-import { BIOME_STORY_TOASTS } from '../config/story.js';
+import { BIOME_STORY_TOASTS, CUTSCENES } from '../config/story.js';
 
 import { StorageService } from '../services/StorageService.js';
 import { AudioService } from '../services/AudioService.js';
@@ -44,7 +44,7 @@ export class Game {
     this.ui = new UIManager(this);
 
     // 5. Game State variables
-    this.state = 'MENU'; // 'MENU' | 'PLAYING' | 'PAUSED' | 'GAMEOVER'
+    this.state = 'MENU'; // 'MENU' | 'PLAYING' | 'PAUSED' | 'GAMEOVER' | 'CUTSCENE'
     this.runSpeed = CONFIG.INITIAL_SPEED;
     this.distance = 0;
     this.score = 0;
@@ -62,6 +62,7 @@ export class Game {
     this.runBossesDefeated = 0;
     this.runMaxCombo = 1;
     this.isNewRecord = false;
+    this._deathCutsceneTimer = null;
 
     // Watchdog & HUD throttling
     this.adaptivePx = null;
@@ -151,6 +152,12 @@ export class Game {
 
   setMenuState() {
     this.state = 'MENU';
+    // Скрыть активную кат-сцену и сбросить таймер смерти при возврате в меню
+    this.ui.cutscene.hide();
+    if (this._deathCutsceneTimer) {
+      clearTimeout(this._deathCutsceneTimer);
+      this._deathCutsceneTimer = null;
+    }
     this.player.reset();
     this.player.model.group.position.set(0, 0.9, 0);
     this.cameraManager.setupMenu();
@@ -164,6 +171,12 @@ export class Game {
 
   startGame() {
     this.state = 'PLAYING';
+    // Очистка таймера кат-сцены смерти (защита от ретрая во время задержки)
+    if (this._deathCutsceneTimer) {
+      clearTimeout(this._deathCutsceneTimer);
+      this._deathCutsceneTimer = null;
+    }
+    this.ui.cutscene.hide();
     this.runSpeed = CONFIG.INITIAL_SPEED;
     this.distance = 0;
     this.score = 0;
@@ -245,6 +258,53 @@ export class Game {
     this.cameraManager.shake(0.3);
   }
 
+  /**
+   * Запустить кат-сцену. Ожидает, что состояние игры PLAYING или GAMEOVER.
+   * Переводит игру в CUTSCENE (физика замораживается), а после onComplete
+   * вызывается колбэк от вызывающего кода для возобновления забега.
+   */
+  startCutscene(cutsceneConfig) {
+    if (this.state === 'CUTSCENE' || this.state === 'MENU') return;
+    this.state = 'CUTSCENE';
+    this.audio.stopMusic();
+    this.ui.cutscene.show(cutsceneConfig);
+  }
+
+  /**
+   * Возобновление забега после кат-сцены (например, перед боем с боссом).
+   */
+  resumeFromCutscene() {
+    if (this.state !== 'CUTSCENE') return;
+    this.ui.cutscene.hide();
+    this.state = 'PLAYING';
+    this.lastFrameTime = performance.now();
+    this.audio.startMusic();
+  }
+
+  /** Кат-сцена перед боем с боссом. */
+  playBossCutscene() {
+    const cfg = CUTSCENES.boss_encounter;
+    const biomeId = (BIOMES[this.currentBiomeIndex] || {}).id;
+    const lines = cfg.getLines ? cfg.getLines(this.level) : cfg.lines;
+    this.startCutscene({
+      badge: cfg.badge,
+      sender: cfg.sender,
+      title: `ОБНАРУЖЕН: ${this.boss.name || 'SKY SENTINEL'}`,
+      color: cfg.color,
+      soundCue: cfg.soundCue,
+      buttonText: cfg.buttonText,
+      lines,
+      onComplete: () => {
+        // Спавн босса происходит только после подтверждения игроком
+        this.boss.spawn(this.player.z, this.currentBiomeIndex, this.level);
+        this.nextBossDistance += CONFIG.BOSS_INTERVAL_METERS;
+        this.audio.bossMusicMode = true;
+        this.resumeFromCutscene();
+        this.ui.showAlert('WARNING: BOSS DETECTED!', this.boss.name);
+      }
+    });
+  }
+
   pauseGame() {
     if (this.state !== 'PLAYING') return;
     this.state = 'PAUSED';
@@ -278,19 +338,35 @@ export class Game {
     this.isNewRecord = this.storage.updateBestDistance(this.distance);
     this.checkAchievements();
 
-    setTimeout(() => {
-      this.ui.showGameOver({
-        distance: this.distance,
-        score: this.score,
-        coinsGathered: this.coinsGathered,
-        bestDistance: this.storage.data.bestDistance,
-        isNewRecord: this.isNewRecord,
-        nearMisses: this.runNearMisses,
-        actionDodges: this.runActionDodges,
-        milestones: this.runMilestones,
-        bossesDefeated: this.runBossesDefeated,
-        maxCombo: this.runMaxCombo,
-        level: this.level
+    // Кат-сцена смерти: после короткой паузы (death tumble) показать драматичную
+    // вставку, и только затем — экран статистики.
+    this._deathCutsceneTimer = setTimeout(() => {
+      const deathCfg = CUTSCENES.player_death;
+      this.startCutscene({
+        badge: deathCfg.badge,
+        sender: deathCfg.sender,
+        title: deathCfg.title,
+        color: deathCfg.color,
+        soundCue: deathCfg.soundCue,
+        buttonText: deathCfg.buttonText,
+        autoAdvanceMs: deathCfg.autoAdvanceMs,
+        lines: deathCfg.lines,
+        onComplete: () => {
+          this.state = 'GAMEOVER';
+          this.ui.showGameOver({
+            distance: this.distance,
+            score: this.score,
+            coinsGathered: this.coinsGathered,
+            bestDistance: this.storage.data.bestDistance,
+            isNewRecord: this.isNewRecord,
+            nearMisses: this.runNearMisses,
+            actionDodges: this.runActionDodges,
+            milestones: this.runMilestones,
+            bossesDefeated: this.runBossesDefeated,
+            maxCombo: this.runMaxCombo,
+            level: this.level
+          });
+        }
       });
     }, 1800);
   }
@@ -684,10 +760,9 @@ export class Game {
 
       // 7. Mini-Boss Encounter Spawning & Combat
       if (this.distance >= this.nextBossDistance && !this.boss.active) {
-        this.boss.spawn(this.player.z, this.currentBiomeIndex, this.level);
-        this.nextBossDistance += CONFIG.BOSS_INTERVAL_METERS;
-        this.ui.showAlert('WARNING: BOSS DETECTED!', this.boss.name);
-        this.audio.bossMusicMode = true;
+        // Кат-сцена перед боем: замораживаем забег, показываем кинематографичную
+        // вставку, босс спавнится после нажатия «ПРОДОЛЖИТЬ».
+        this.playBossCutscene();
       }
 
       if (this.boss.active) {
@@ -782,6 +857,12 @@ export class Game {
       this.player.updateDeath(dtSlow);
       this.particles.update(dtSlow);
       this.cameraManager.updateDeath(dtSlow, this.player);
+    } else if (this.state === 'CUTSCENE') {
+      // Кат-сцена: физика и продвижение заморожены, но сцена продолжает рендериться
+      // за прозрачным оверлеем. Лёгкая idle-анимация игрока для «живой» картинки.
+      const t = timestamp * 0.001;
+      this.player.model.animate({ isGrounded: true }, t, 0.4);
+      this.particles.update(dt);
     } else if (this.state === 'MENU') {
       const t = timestamp * 0.001;
       this.player.model.group.rotation.y = t * 1.2;

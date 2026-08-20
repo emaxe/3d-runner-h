@@ -327,6 +327,21 @@ export class AudioService {
         osc.stop(t + 0.09);
         break;
       }
+
+      case 'type_blip': {
+        // Мягкий терминальный чирп для эффекта печатной машинки (короткий синус)
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(1150, t);
+        gain.gain.setValueAtTime(0.12, t);
+        gain.gain.exponentialRampToValueAtTime(0.01, t + 0.02);
+        osc.connect(gain);
+        gain.connect(dest);
+        osc.start(t);
+        osc.stop(t + 0.02);
+        break;
+      }
     }
   }
 
