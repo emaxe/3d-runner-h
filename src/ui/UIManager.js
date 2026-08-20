@@ -301,7 +301,8 @@ export class UIManager {
     const mag = player.magnetTimer > 0 ? Math.ceil(player.magnetTimer) : 0;
     const mult = player.multiplierTimer > 0 ? Math.ceil(player.multiplierTimer) : 0;
     const slow = player.slowmoTimer > 0 ? Math.ceil(player.slowmoTimer) : 0;
-    const powerupsHash = `${hasShield ? 1 : 0}_${mag}_${mult}_${slow}`;
+    const ghost = player.ghostTimer > 0 ? Math.ceil(player.ghostTimer) : 0;
+    const powerupsHash = `${hasShield ? 1 : 0}_${mag}_${mult}_${slow}_${ghost}`;
 
     if (powerupsHash !== this._hudCache.powerups) {
       const pList = document.getElementById('hud-powerups-list');
@@ -318,6 +319,9 @@ export class UIManager {
         }
         if (slow > 0) {
           html += `<div class="px-2.5 py-1 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-xs font-bold font-gaming flex items-center space-x-1"><span>⏳ SLOW</span><span>${slow}s</span></div>`;
+        }
+        if (ghost > 0) {
+          html += `<div class="px-2.5 py-1 rounded-xl bg-purple-500/20 text-purple-300 border border-purple-500/40 text-xs font-bold font-gaming flex items-center space-x-1"><span>👻 GHOST</span><span>${ghost}s</span></div>`;
         }
         pList.innerHTML = html;
       }

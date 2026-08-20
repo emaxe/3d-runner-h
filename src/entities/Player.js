@@ -35,6 +35,7 @@ export class Player {
     this.multiplierTimer = 0;
     this.slowmoTimer = 0;
     this.invulnerableTimer = 0;
+    this.ghostTimer = 0;
 
     // Nitro
     this.nitroEnergy = 40;
@@ -87,6 +88,8 @@ export class Player {
     this.multiplierTimer = 0;
     this.slowmoTimer = 0;
     this.invulnerableTimer = 0;
+    this.ghostTimer = 0;
+    this.model.setGhostMode(false);
     this.nitroEnergy = 40;
     this.isNitroActive = false;
     this.nitroTimer = 0;
@@ -338,6 +341,7 @@ export class Player {
     if (this.multiplierTimer > 0) this.multiplierTimer -= dt;
     if (this.slowmoTimer > 0) this.slowmoTimer -= dt;
     if (this.invulnerableTimer > 0) this.invulnerableTimer -= dt;
+    if (this.ghostTimer > 0) this.ghostTimer -= dt;
 
     // 6. Nitro Update & Recharge
     if (this.isNitroActive) {
@@ -427,6 +431,22 @@ export class Player {
       );
     }
 
+    // 6e. Ghost Phase etherial trail
+    if (this.ghostTimer > 0 && Math.random() < 0.35) {
+      this.particles.spawn(
+        this.x + (Math.random() - 0.5) * 0.4,
+        this.y + (Math.random() - 0.5) * 0.6,
+        this.z - 0.2,
+        1,
+        0xa855f7,
+        1.4,
+        0.12,
+        0.3,
+        'sphere',
+        1
+      );
+    }
+
     // 7. Gravity Visual Inversion Roll & Smooth Bank Angle
     const targetRotZ = this.gravityDirection === 1 ? 0 : Math.PI;
     this.model.group.rotation.z += (targetRotZ - this.model.group.rotation.z) * 12 * dt;
@@ -444,7 +464,8 @@ export class Player {
       {
         isGrounded: this.isGrounded,
         isSliding: this.isSliding,
-        isDead: this.isDead
+        isDead: this.isDead,
+        ghostTimer: this.ghostTimer
       },
       performance.now() * 0.001,
       worldSpeed / CONFIG.INITIAL_SPEED

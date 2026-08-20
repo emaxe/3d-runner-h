@@ -35,6 +35,9 @@ export const CONFIG = {
   NITRO_MAX_ENERGY: 100,
   NITRO_RECHARGE_RATE: 4.0,
 
+  // Ghost Phase powerup
+  GHOST_DURATION: 4.5,
+
   // World Events
   BOSS_INTERVAL_METERS: 400,
   BIOME_INTERVAL_METERS: 650,

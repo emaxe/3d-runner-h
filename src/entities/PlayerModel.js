@@ -297,6 +297,28 @@ export class PlayerModel {
 
     // Property alias for external access
     this.shieldMesh = this.shieldGroup;
+
+    // Ghost Phase visual state
+    this.isGhostMode = false;
+  }
+
+  /**
+   * Включает/выключает полупрозрачность модели для Ghost Phase.
+   * Вызывается однократно при смене состояния (не каждый кадр), чтобы
+   * не перекомпилировать шейдеры (needsUpdate) в цикле.
+   */
+  setGhostMode(enabled) {
+    if (this.isGhostMode === enabled) return;
+    this.isGhostMode = enabled;
+    this.group.traverse((child) => {
+      if (child.isMesh && child !== this.shieldGroup) {
+        child.material.transparent = true;
+        // Пламя джетпака изначально полупрозрачно (opacity 0.85) — восстанавливаем его
+        child.material.opacity = enabled ? 0.35 : (child.material === this.materials.flame ? 0.85 : 1.0);
+        child.material.depthWrite = !enabled;
+        child.material.needsUpdate = true;
+      }
+    });
   }
 
   applySkin(skinConfig) {
@@ -314,6 +336,20 @@ export class PlayerModel {
 
   animate(state, time, speedFactor = 1.0) {
     const runFreq = time * 14 * speedFactor;
+
+    // Ghost Phase: пульсирующая прозрачность (быстрее мигает, когда время на исходе)
+    if (state.ghostTimer > 0) {
+      if (!this.isGhostMode) this.setGhostMode(true);
+      const pulseFreq = state.ghostTimer < 1.0 ? 30 : 12;
+      const alpha = 0.35 + Math.sin(time * pulseFreq) * 0.18;
+      this.group.traverse((child) => {
+        if (child.isMesh && child !== this.shieldGroup) {
+          child.material.opacity = alpha;
+        }
+      });
+    } else if (this.isGhostMode) {
+      this.setGhostMode(false);
+    }
 
     // Thruster flame flicker & pulsation
     const flameScale = 0.8 + Math.sin(time * 30) * 0.3 + (state.isNitroActive ? 0.8 : 0);

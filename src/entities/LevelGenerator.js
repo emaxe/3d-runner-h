@@ -63,7 +63,8 @@ export class LevelGenerator {
         shield: new THREE.MeshBasicMaterial({ color: 0x38bdf8 }),
         magnet: new THREE.MeshBasicMaterial({ color: 0xf43f5e }),
         multiplier: new THREE.MeshBasicMaterial({ color: 0xfacc15 }),
-        slowmo: new THREE.MeshBasicMaterial({ color: 0x22c55e })
+        slowmo: new THREE.MeshBasicMaterial({ color: 0x22c55e }),
+        ghost: new THREE.MeshBasicMaterial({ color: 0xa855f7 })
       }
     };
 
@@ -607,7 +608,7 @@ export class LevelGenerator {
         } else {
           // Free floor lane: Coins or Powerup
           if (Math.random() < 0.12) {
-            const types = ['magnet', 'shield', 'multiplier', 'slowmo'];
+            const types = ['magnet', 'shield', 'multiplier', 'slowmo', 'ghost'];
             const pType = types[Math.floor(Math.random() * types.length)];
             const pMesh = new THREE.Mesh(this.geos.powerup, this.materials.powerups[pType]);
             pMesh.position.set(x, 1.2, z);

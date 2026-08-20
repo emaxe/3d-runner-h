@@ -252,6 +252,12 @@ export class Game {
   }
 
   onPlayerHitObstacle(obs) {
+    // Ghost Phase: игрок фазирует сквозь препятствия — без урона, без траты щита,
+    // без разрушения препятствия и без очков SMASHED. Проверка стоит ПЕРВОЙ.
+    if (this.player.ghostTimer > 0) {
+      return;
+    }
+
     if (this.player.invulnerableTimer > 0 || this.player.isNitroActive) {
       // Smashed obstacle
       this.score += 150 * this.player.combo;
@@ -358,6 +364,11 @@ export class Game {
       case 'slowmo':
         this.player.slowmoTimer = 5.0;
         this.ui.showAlert('CHRONO SLOW', 'Time slowed down');
+        break;
+      case 'ghost':
+        this.player.ghostTimer = CONFIG.GHOST_DURATION;
+        this.player.model.setGhostMode(true);
+        this.ui.showAlert('GHOST PHASE', 'Phasing through obstacles');
         break;
     }
   }
