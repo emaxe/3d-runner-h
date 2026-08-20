@@ -21,6 +21,7 @@ export class MiniBoss {
     this.time = 0;
     this.attackTimer = 0;
     this.bossProjectiles = [];
+    this.spiralQueue = [];
     this.deathTimer = 0;
     this.deathExplosionInterval = 0;
     this.chargeFlash = 0; // 0..1 — вспышка зарядки перед выстрелом
@@ -329,13 +330,21 @@ export class MiniBoss {
       player.shootCooldown = 0.28;
     }
 
-    // Boss Attack Timer (скорость атак растёт с уровнем)
+    // Boss Attack Timer (скорость атак растёт с уровнем и фазой HP)
     this.attackTimer -= dt;
     if (this.attackTimer <= 0) {
       const level = this.level || 1;
       const attackSpeedBonus = 1 + (level - 1) * CONFIG.LEVEL_BOSS_ATTACK_BONUS;
-      this.attackTimer = 1.6 / attackSpeedBonus;
-      this.fireAttack(player);
+      const hpRatio = this.maxHp > 0 ? this.hp / this.maxHp : 0;
+      let phaseMul = 1.0;
+      if (hpRatio <= 0.33) {
+        phaseMul = 0.70;
+      } else if (hpRatio <= 0.66) {
+        phaseMul = 0.85;
+      }
+
+      const isHeavy = this.fireAttack(player);
+      this.attackTimer = (1.6 * phaseMul) / attackSpeedBonus + (isHeavy ? 0.25 : 0);
     }
 
     // Затухание muzzle flash
@@ -399,44 +408,194 @@ export class MiniBoss {
     }
   }
 
-  fireAttack(player) {
-    // Снаряд вылетает из пушки босса и летит к текущей позиции игрока
+  choosePattern() {
+    const hpRatio = this.maxHp > 0 ? this.hp / this.maxHp : 0;
+    const level = this.level || 1;
+
+    let pool = [];
+    if (hpRatio > 0.66) {
+      // Phase 1 (hpRatio > 0.66): [P1(0.65), P2(0.35)]
+      pool = [
+        { id: 'single', weight: 0.65 },
+        { id: 'spread', weight: 0.35 }
+      ];
+    } else if (hpRatio > 0.33) {
+      // Phase 2 (0.33 < hpRatio <= 0.66): [P1(0.25), P2(0.40), P3(0.35)]
+      pool = [
+        { id: 'single', weight: 0.25 },
+        { id: 'spread', weight: 0.40 },
+        { id: 'pincer', weight: 0.35 }
+      ];
+    } else {
+      // Phase 3 (hpRatio <= 0.33, enrage): [P2(0.30), P3(0.35), P4(0.35)]
+      pool = [
+        { id: 'spread', weight: 0.30 },
+        { id: 'pincer', weight: 0.35 },
+        { id: 'split', weight: 0.35 }
+      ];
+    }
+
+    // Уровневые ограничения: P3 доступен при level >= 2, P4 при level >= 3
+    const available = pool.filter(p => {
+      if (p.id === 'pincer' && level < 2) return false;
+      if (p.id === 'split' && level < 3) return false;
+      return true;
+    });
+
+    if (available.length === 0) {
+      return 'single';
+    }
+
+    const totalWeight = available.reduce((sum, p) => sum + p.weight, 0);
+    let r = Math.random() * totalWeight;
+
+    for (const p of available) {
+      r -= p.weight;
+      if (r <= 0) {
+        return p.id;
+      }
+    }
+
+    return available[available.length - 1].id;
+  }
+
+  _computeDir(fromX, fromY, fromZ, toX, toY, toZ, speed) {
+    const dx = toX - fromX;
+    const dy = toY - fromY;
+    const dz = toZ - fromZ;
+    const len = Math.hypot(dx, dy, dz) || 1;
+    return {
+      vx: (dx / len) * speed,
+      vy: (dy / len) * speed,
+      vz: (dz / len) * speed
+    };
+  }
+
+  _spawnProjectile(sx, sy, sz, vx, vy, vz, life = 2.5, muzzle = null) {
+    // Лимит снарядов (защита слабых устройств)
+    if (this.bossProjectiles.length >= 20) return null;
+
+    const mesh = new THREE.Mesh(this.projectileGeo, this.projectileMat);
+    mesh.position.set(sx, sy, sz);
+    this.scene.add(mesh);
+
+    this.bossProjectiles.push({
+      mesh,
+      vx,
+      vy,
+      vz,
+      life
+    });
+
+    // Muzzle flash и частицы
+    if (muzzle) {
+      muzzle.intensity = 2.5;
+    }
+    this.particles.spawn(sx, sy, sz, 6, 0xf59e0b, 4, 0.15, 0.25, 'spark', 0);
+    this.audio.playSound('laser');
+
+    return mesh;
+  }
+
+  _fireSingle(player) {
     const side = Math.random() < 0.5 ? -1 : 1;
     const cannon = side < 0 ? this.cannonL : this.cannonR;
     const muzzle = side < 0 ? this.muzzleL : this.muzzleR;
 
-    // Стартовая позиция — из дула пушки (в мировых координатах)
     const startX = this.group.position.x + cannon.position.x;
     const startY = this.group.position.y + cannon.position.y;
     const startZ = this.group.position.z + cannon.position.z - 0.6;
 
-    // Цель — текущая позиция игрока (по центру массы)
     const targetX = player.x;
     const targetY = player.y + 0.9;
     const targetZ = player.z;
-
-    // Направление от пушки к игроку
-    const dx = targetX - startX;
-    const dy = targetY - startY;
-    const dz = targetZ - startZ;
-    const len = Math.hypot(dx, dy, dz) || 1;
     const speed = 42;
 
-    const mesh = new THREE.Mesh(this.projectileGeo, this.projectileMat);
-    mesh.position.set(startX, startY, startZ);
-    this.scene.add(mesh);
-    this.bossProjectiles.push({
-      mesh,
-      vx: (dx / len) * speed,
-      vy: (dy / len) * speed,
-      vz: (dz / len) * speed,
-      life: 2.5
-    });
+    const dir = this._computeDir(startX, startY, startZ, targetX, targetY, targetZ, speed);
+    this._spawnProjectile(startX, startY, startZ, dir.vx, dir.vy, dir.vz, 2.5, muzzle);
+    return false;
+  }
 
-    // Muzzle flash — вспышка света и частицы из дула
-    muzzle.intensity = 2.5;
-    this.particles.spawn(startX, startY, startZ, 6, 0xf59e0b, 4, 0.15, 0.25, 'spark', 0);
+  _fireSpread(player) {
+    const startX = this.group.position.x;
+    const startY = this.group.position.y;
+    const startZ = this.group.position.z - 0.6;
 
-    this.audio.playSound('laser');
+    const targetY = player.y + 0.9;
+    const targetZ = player.z;
+    const speed = 38;
+    const lanes = [-CONFIG.LANE_WIDTH, 0, CONFIG.LANE_WIDTH];
+
+    this.muzzleL.intensity = 2.5;
+    this.muzzleR.intensity = 2.5;
+
+    for (const laneX of lanes) {
+      const dir = this._computeDir(startX, startY, startZ, laneX, targetY, targetZ, speed);
+      this._spawnProjectile(startX, startY, startZ, dir.vx, dir.vy, dir.vz, 2.5, null);
+    }
+    return true;
+  }
+
+  _firePincer(player) {
+    const sxL = this.group.position.x + this.cannonL.position.x;
+    const syL = this.group.position.y + this.cannonL.position.y;
+    const szL = this.group.position.z + this.cannonL.position.z - 0.6;
+
+    const sxR = this.group.position.x + this.cannonR.position.x;
+    const syR = this.group.position.y + this.cannonR.position.y;
+    const szR = this.group.position.z + this.cannonR.position.z - 0.6;
+
+    const targetY = player.y + 0.9;
+    const targetZ = player.z;
+    const speed = 42;
+
+    const targetLx = player.x + 1.2;
+    const targetRx = player.x - 1.2;
+
+    const dirL = this._computeDir(sxL, syL, szL, targetLx, targetY, targetZ, speed);
+    this._spawnProjectile(sxL, syL, szL, dirL.vx, dirL.vy, dirL.vz, 2.5, this.muzzleL);
+
+    const dirR = this._computeDir(sxR, syR, szR, targetRx, targetY, targetZ, speed);
+    this._spawnProjectile(sxR, syR, szR, dirR.vx, dirR.vy, dirR.vz, 2.5, this.muzzleR);
+
+    return true;
+  }
+
+  _fireSplit(player) {
+    const sxL = this.group.position.x + this.cannonL.position.x;
+    const syL = this.group.position.y + this.cannonL.position.y;
+    const szL = this.group.position.z + this.cannonL.position.z - 0.6;
+
+    const sxR = this.group.position.x + this.cannonR.position.x;
+    const syR = this.group.position.y + this.cannonR.position.y;
+    const szR = this.group.position.z + this.cannonR.position.z - 0.6;
+
+    const speed = 40;
+    const targetZ = player.z;
+    const targetLowY = 0.9;
+    const targetHighY = 4.7;
+
+    const dirLow = this._computeDir(sxL, syL, szL, player.x, targetLowY, targetZ, speed);
+    this._spawnProjectile(sxL, syL, szL, dirLow.vx, dirLow.vy, dirLow.vz, 2.5, this.muzzleL);
+
+    const dirHigh = this._computeDir(sxR, syR, szR, player.x, targetHighY, targetZ, speed);
+    this._spawnProjectile(sxR, syR, szR, dirHigh.vx, dirHigh.vy, dirHigh.vz, 2.5, this.muzzleR);
+
+    return true;
+  }
+
+  fireAttack(player) {
+    const pattern = this.choosePattern();
+    switch (pattern) {
+      case 'spread':
+        return this._fireSpread(player);
+      case 'pincer':
+        return this._firePincer(player);
+      case 'split':
+        return this._fireSplit(player);
+      case 'single':
+      default:
+        return this._fireSingle(player);
+    }
   }
 }
