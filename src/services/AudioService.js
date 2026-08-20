@@ -76,7 +76,7 @@ export class AudioService {
     }
   }
 
-  playSound(type) {
+  playSound(type, extra = 1) {
     if (this.isMuted || this.sfxVolume <= 0) return;
     this.init();
     if (!this.ctx || !this.masterSfxGain) return;
@@ -313,18 +313,38 @@ export class AudioService {
       }
 
       case 'near_miss': {
-        // Футуристический свистящий чирп (triangle sweep 520Hz -> 1180Hz за 90мс)
+        // Футуристический свистящий чирп (triangle sweep). При серии (extra=streak)
+        // частота поднимается по полутонам и добавляются гармоники для эскалации.
+        const streak = Math.max(1, extra || 1);
+        const shift = Math.pow(1.06, Math.min(12, streak - 1));
+        const baseFreq = 520 * shift;
+        const endFreq = 1180 * shift;
+        const dur = streak >= 10 ? 0.14 : streak >= 5 ? 0.12 : 0.09;
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(520, t);
-        osc.frequency.exponentialRampToValueAtTime(1180, t + 0.09);
+        osc.type = streak >= 10 ? 'sawtooth' : 'triangle';
+        osc.frequency.setValueAtTime(baseFreq, t);
+        osc.frequency.exponentialRampToValueAtTime(endFreq, t + dur);
         gain.gain.setValueAtTime(0.28, t);
-        gain.gain.exponentialRampToValueAtTime(0.01, t + 0.09);
+        gain.gain.exponentialRampToValueAtTime(0.01, t + dur);
         osc.connect(gain);
         gain.connect(dest);
         osc.start(t);
-        osc.stop(t + 0.09);
+        osc.stop(t + dur);
+        // Гармонический второй осциллятор (квинта ×1.5) для серий ≥ 5
+        if (streak >= 5) {
+          const osc2 = this.ctx.createOscillator();
+          const gain2 = this.ctx.createGain();
+          osc2.type = 'sine';
+          osc2.frequency.setValueAtTime(endFreq * 1.5, t);
+          osc2.frequency.exponentialRampToValueAtTime(endFreq * 2.0, t + dur);
+          gain2.gain.setValueAtTime(0.14, t);
+          gain2.gain.exponentialRampToValueAtTime(0.01, t + dur);
+          osc2.connect(gain2);
+          gain2.connect(dest);
+          osc2.start(t);
+          osc2.stop(t + dur);
+        }
         break;
       }
 

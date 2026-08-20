@@ -61,6 +61,7 @@ export class Game {
     this.runMilestones = 0;
     this.runBossesDefeated = 0;
     this.runMaxCombo = 1;
+    this.runMaxNearMissStreak = 0;
     this.isNewRecord = false;
     this._deathCutsceneTimer = null;
 
@@ -192,6 +193,7 @@ export class Game {
     this.runMilestones = 0;
     this.runBossesDefeated = 0;
     this.runMaxCombo = 1;
+    this.runMaxNearMissStreak = 0;
     this.isNewRecord = false;
     const hasStartShield = (this.storage.data.upgrades.shield_start || 0) > 0;
     this.player.reset(hasStartShield);
@@ -364,6 +366,7 @@ export class Game {
             milestones: this.runMilestones,
             bossesDefeated: this.runBossesDefeated,
             maxCombo: this.runMaxCombo,
+            maxNearMissStreak: this.runMaxNearMissStreak,
             level: this.level
           });
         }
@@ -412,6 +415,7 @@ export class Game {
       }
       this.player.hasShield = false;
       this.player.invulnerableTimer = 1.0;
+      this.player.nearMissStreak = 0; // удар по щиту рвёт серию near-miss
       this.audio.playSound('hit');
       this.cameraManager.shake(0.35);
       this.particles.spawn(this.player.x, this.player.y + 0.9, this.player.z, 20, 0x38bdf8, 6);
@@ -420,6 +424,7 @@ export class Game {
     }
 
     // Fatal crash
+    this.player.nearMissStreak = 0; // смерть рвёт серию near-miss
     this.gameOver();
   }
 
@@ -523,9 +528,16 @@ export class Game {
   onNearMiss(obs) {
     if (this.state !== 'PLAYING' || this.player.isDead) return;
 
-    // Очки с учётом множителя комбо и пауэрапа 2x
+    // Near-Miss Streak: серия подряд идущих near-miss с эскалацией награды.
+    this.player.nearMissStreak++;
+    if (this.player.nearMissStreak > this.runMaxNearMissStreak) {
+      this.runMaxNearMissStreak = this.player.nearMissStreak;
+    }
+    const streakMult = this._getStreakMultiplier();
+
+    // Очки с учётом множителя комбо, пауэрапа 2x и множителя серии
     const multiplier = this.player.multiplierTimer > 0 ? 2 : 1;
-    const scoreGain = CONFIG.NEAR_MISS_SCORE * this.player.combo * multiplier;
+    const scoreGain = CONFIG.NEAR_MISS_SCORE * this.player.combo * multiplier * streakMult;
     this.score += scoreGain;
 
     // Буст комбо-стрика (приближает к следующему xN)
@@ -539,6 +551,9 @@ export class Game {
         this.storage.save();
       }
       this.ui.showAlert(`COMBO x${this.player.combo}!`, 'Multiplier Boost');
+    } else if (streakMult > 1) {
+      const tier = this._getStreakTierInfo();
+      this.ui.showAlert(tier.title, `${tier.sub} +${scoreGain} Score`);
     } else {
       this.ui.showAlert('NEAR MISS!', `+${scoreGain} Score`);
     }
@@ -547,13 +562,42 @@ export class Game {
     this.storage.data.totalNearMisses = (this.storage.data.totalNearMisses || 0) + 1;
     this.runNearMisses++;
 
-    // Звук и визуал
-    this.audio.playSound('near_miss');
-    this.particles.spawn(this.player.x, this.player.y, this.player.z, 8, 0x00f0ff, 2.5, 0.1, 0.3, 'spark', 1);
-    this.cameraManager.shake(0.12);
+    // Звук и визуал (эскалация с ростом серии)
+    this.audio.playSound('near_miss', this.player.nearMissStreak);
+    const sparkColor = streakMult >= 10 ? 0xf59e0b : streakMult >= 5 ? 0xa855f7 : streakMult >= 2 ? 0x38bdf8 : 0x00f0ff;
+    const sparkCount = streakMult >= 10 ? 24 : streakMult >= 5 ? 16 : streakMult >= 2 ? 12 : 8;
+    this.particles.spawn(this.player.x, this.player.y, this.player.z, sparkCount, sparkColor, 2.5, 0.1, 0.3, 'spark', 1);
+    this.cameraManager.shake(0.12 + Math.min(0.28, this.player.nearMissStreak * 0.03));
 
     // Проверка ачивок
     this.checkAchievements();
+  }
+
+  // Множитель очков по текущей длине серии (1x / 2x / 5x / 10x)
+  _getStreakMultiplier() {
+    const streak = this.player.nearMissStreak;
+    const tiers = CONFIG.NEAR_MISS_STREAK_TIERS;
+    const mults = CONFIG.NEAR_MISS_STREAK_MULTS;
+    let mult = mults[0];
+    for (let i = tiers.length - 1; i >= 0; i--) {
+      if (streak >= tiers[i]) { mult = mults[i + 1]; break; }
+    }
+    return mult;
+  }
+
+  // Описание тира для тоста
+  _getStreakTierInfo() {
+    const mult = this._getStreakMultiplier();
+    if (mult >= 10) return { title: 'GODLIKE STREAK!', sub: '10x Score Multiplier' };
+    if (mult >= 5) return { title: 'MEGA STREAK!', sub: '5x Score Multiplier' };
+    return { title: 'STREAK x2!', sub: '2x Score Multiplier' };
+  }
+
+  // Разрыв серии near-miss (игрок прошёл мимо препятствия вплотную, не получив near-miss)
+  onNearMissStreakBreak() {
+    if (this.state !== 'PLAYING' || this.player.isDead) return;
+    if (this.player.nearMissStreak < 2) return; // серии нет — нечего сбрасывать
+    this.player.nearMissStreak = 0;
   }
 
   /**

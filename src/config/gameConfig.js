@@ -48,6 +48,10 @@ export const CONFIG = {
   NEAR_MISS_Z_WINDOW: 2.2, // окно Z за препятствием для регистрации промаха
   NEAR_MISS_SCORE: 50, // базовые очки за Near Miss (умножаются на combo)
   NEAR_MISS_STREAK_BONUS: 3, // прибавка к comboScoreStreak за Near Miss
+  // Near-Miss Streak: серия подряд идущих near-miss с эскалацией награды.
+  NEAR_MISS_STREAK_TIERS: [2, 5, 10], // пороги серии для тиров x2/x5/x10
+  NEAR_MISS_STREAK_MULTS: [1, 2, 5, 10], // множитель очков по тирам (индекс 0 = до 2 серии)
+  NEAR_MISS_STREAK_MAX_Y_GAP: 2.2, // макс. вертикальный зазор для разрыва серии (препятствие на др. поверхности не рвёт серию)
 
   // Action Dodge System (точный прыжок/подкат в своей полосе — вертикальный клиренс)
   ACTION_DODGE_Z_THRESHOLD: 0.3, // мин. зазор Z после прохождения препятствия

@@ -77,6 +77,30 @@ export class CollisionSystem {
             obs.nearMissCounted = true;
           }
         }
+        // Препятствие полностью миновало игрока и не было near-miss — разрыв серии,
+        // НО только если оно было в вертикальной плоскости игрока (близкий зазор по Y).
+        // Препятствие на другой поверхности (потолок/пол вдали) серию НЕ рвёт.
+        else if (
+          pHitbox.minZ > h.maxZ + CONFIG.NEAR_MISS_Z_WINDOW &&
+          !obs.destroyed &&
+          !obs.wasHit &&
+          player.ghostTimer <= 0 &&
+          !player.isDead &&
+          this.game.state === 'PLAYING'
+        ) {
+          const yGapB = Math.abs(pHitbox.maxY - h.minY);
+          const yGapT = Math.abs(pHitbox.minY - h.maxY);
+          const minYGap = Math.min(yGapB, yGapT);
+          obs.nearMissCounted = true;
+          // Разрыв серии только если препятствие было в полосе игрока (пересечение по X)
+          // и в его вертикальной плоскости (близкий зазор по Y).
+          if (
+            pHitbox.maxX > h.minX && pHitbox.minX < h.maxX &&
+            minYGap < CONFIG.NEAR_MISS_STREAK_MAX_Y_GAP
+          ) {
+            this.game.onNearMissStreakBreak();
+          }
+        }
       }
 
       // Action Dodge: игрок впритирку перепрыгнул/прошёл под препятствием В СВОЕЙ полосе.

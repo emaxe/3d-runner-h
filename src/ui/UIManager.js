@@ -390,7 +390,8 @@ export class UIManager {
       s = {
         distance, score, coinsGathered, bestDistance,
         isNewRecord: false, nearMisses: 0, actionDodges: 0,
-        milestones: 0, bossesDefeated: 0, maxCombo: 1, level: 1
+        milestones: 0, bossesDefeated: 0, maxCombo: 1,
+        maxNearMissStreak: 0, level: 1
       };
     }
 
@@ -415,6 +416,7 @@ export class UIManager {
     const nmEl = document.getElementById('gameover-near-misses');
     const adEl = document.getElementById('gameover-action-dodges');
     const maxComboEl = document.getElementById('gameover-max-combo');
+    const maxStreakEl = document.getElementById('gameover-max-streak');
     const bossesEl = document.getElementById('gameover-bosses');
     const milestonesEl = document.getElementById('gameover-milestones');
     const levelEl = document.getElementById('gameover-level');
@@ -422,6 +424,7 @@ export class UIManager {
     if (nmEl) nmEl.textContent = s.nearMisses;
     if (adEl) adEl.textContent = s.actionDodges;
     if (maxComboEl) maxComboEl.textContent = `x${s.maxCombo}`;
+    if (maxStreakEl) maxStreakEl.textContent = `x${s.maxNearMissStreak || 0}`;
     if (bossesEl) bossesEl.textContent = s.bossesDefeated;
     if (milestonesEl) milestonesEl.textContent = s.milestones;
     if (levelEl) levelEl.textContent = `LEVEL ${s.level}`;

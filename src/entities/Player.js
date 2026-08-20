@@ -49,6 +49,7 @@ export class Player {
     this.isDead = false;
     this.combo = 1;
     this.comboScoreStreak = 0;
+    this.nearMissStreak = 0; // серия подряд идущих near-miss (эскалация награды)
 
     // Death Ragdoll Physics
     this.deathTimer = 0;
@@ -113,8 +114,7 @@ export class Player {
 
     this.combo = 1;
     this.comboScoreStreak = 0;
-
-    // Clear projectiles
+    this.nearMissStreak = 0;
     for (const p of this.projectiles) {
       this.scene.remove(p.mesh);
     }
