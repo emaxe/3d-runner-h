@@ -1,3 +1,5 @@
+import { CONFIG } from '../config/gameConfig.js';
+
 /**
  * CollisionSystem - Evaluates AABB and radial physics interactions between entities.
  */
@@ -41,6 +43,36 @@ export class CollisionSystem {
       ) {
         this.game.onPlayerHitObstacle(obs);
         break;
+      }
+
+      // Near-miss: игрок прошёл мимо препятствия впритирку, не задев его
+      if (
+        !obs.nearMissCounted &&
+        !obs.wasHit &&
+        !obs.destroyed &&
+        player.ghostTimer <= 0 &&
+        !player.isDead &&
+        this.game.state === 'PLAYING'
+      ) {
+        // Игрок только что миновал заднюю границу препятствия (в окне Z)
+        const passedZ = pHitbox.minZ > h.maxZ && pHitbox.minZ <= h.maxZ + CONFIG.NEAR_MISS_Z_WINDOW;
+        if (passedZ) {
+          // Зазоры по X и Y между хитбоксом игрока и препятствия
+          const xGapL = Math.abs(pHitbox.maxX - h.minX);
+          const xGapR = Math.abs(pHitbox.minX - h.maxX);
+          const minXGap = Math.min(xGapL, xGapR);
+          const yGapB = Math.abs(pHitbox.maxY - h.minY);
+          const yGapT = Math.abs(pHitbox.minY - h.maxY);
+          const minYGap = Math.min(yGapB, yGapT);
+
+          if (minXGap < CONFIG.NEAR_MISS_X_MARGIN && minYGap < CONFIG.NEAR_MISS_Y_MARGIN) {
+            obs.nearMissCounted = true;
+            this.game.onNearMiss(obs);
+          } else if (pHitbox.minZ > h.maxZ + CONFIG.NEAR_MISS_Z_WINDOW) {
+            // Препятствие прошло слишком далеко — гасим проверку
+            obs.nearMissCounted = true;
+          }
+        }
       }
     }
 

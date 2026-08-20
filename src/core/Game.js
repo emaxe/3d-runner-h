@@ -252,6 +252,7 @@ export class Game {
   }
 
   onPlayerHitObstacle(obs) {
+    if (obs) obs.wasHit = true;
     // Ghost Phase: игрок фазирует сквозь препятствия — без урона, без траты щита,
     // без разрушения препятствия и без очков SMASHED. Проверка стоит ПЕРВОЙ.
     if (this.player.ghostTimer > 0) {
@@ -376,6 +377,40 @@ export class Game {
         this.ui.showAlert('PLASMA OVERDRIVE', 'Rapid Blaster Cannons Active');
         break;
     }
+  }
+
+  onNearMiss(obs) {
+    if (this.state !== 'PLAYING' || this.player.isDead) return;
+
+    // Очки с учётом множителя комбо и пауэрапа 2x
+    const multiplier = this.player.multiplierTimer > 0 ? 2 : 1;
+    const scoreGain = CONFIG.NEAR_MISS_SCORE * this.player.combo * multiplier;
+    this.score += scoreGain;
+
+    // Буст комбо-стрика (приближает к следующему xN)
+    this.player.comboScoreStreak = Math.min(9, this.player.comboScoreStreak + CONFIG.NEAR_MISS_STREAK_BONUS);
+    if (this.player.comboScoreStreak >= 10 && this.player.combo < 10) {
+      this.player.combo++;
+      this.player.comboScoreStreak = 0;
+      if (this.player.combo > this.storage.data.maxComboReached) {
+        this.storage.data.maxComboReached = this.player.combo;
+        this.storage.save();
+      }
+      this.ui.showAlert(`COMBO x${this.player.combo}!`, 'Multiplier Boost');
+    } else {
+      this.ui.showAlert('NEAR MISS!', `+${scoreGain} Score`);
+    }
+
+    // Статистика (поле totalNearMisses уже есть в StorageService)
+    this.storage.data.totalNearMisses = (this.storage.data.totalNearMisses || 0) + 1;
+
+    // Звук и визуал
+    this.audio.playSound('near_miss');
+    this.particles.spawn(this.player.x, this.player.y, this.player.z, 8, 0x00f0ff, 2.5, 0.1, 0.3, 'spark', 1);
+    this.cameraManager.shake(0.12);
+
+    // Проверка ачивок
+    this.checkAchievements();
   }
 
   checkAchievements() {

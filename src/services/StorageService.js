@@ -20,6 +20,7 @@ export class StorageService {
       bossesDefeated: 0,
       totalNitroUsed: 0,
       maxComboReached: 1,
+      totalNearMisses: 0,
       selectedSkin: 'cyber',
       unlockedSkins: ['cyber'],
       upgrades: {

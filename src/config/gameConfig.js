@@ -42,6 +42,13 @@ export const CONFIG = {
   OVERDRIVE_DURATION: 6.0,
   OVERDRIVE_FIRE_RATE: 0.14, // интервал автострельбы в секундах
 
+  // Near Miss System (близкий промах)
+  NEAR_MISS_X_MARGIN: 0.6, // допустимый зазор по X (м) от хитбокса
+  NEAR_MISS_Y_MARGIN: 0.6, // допустимый зазор по Y (м) от хитбокса
+  NEAR_MISS_Z_WINDOW: 2.2, // окно Z за препятствием для регистрации промаха
+  NEAR_MISS_SCORE: 50, // базовые очки за Near Miss (умножаются на combo)
+  NEAR_MISS_STREAK_BONUS: 3, // прибавка к comboScoreStreak за Near Miss
+
   // World Events
   BOSS_INTERVAL_METERS: 400,
   BIOME_INTERVAL_METERS: 650,

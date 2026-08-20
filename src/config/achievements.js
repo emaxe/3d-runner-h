@@ -81,5 +81,13 @@ export const ACHIEVEMENTS = [
     reward: 150,
     target: 5,
     key: 'maxComboReached'
+  },
+  {
+    id: 'near_miss_50',
+    name: 'Near Miss Master',
+    desc: 'Perform 50 Near Miss close dodges',
+    reward: 200,
+    target: 50,
+    key: 'totalNearMisses'
   }
 ];

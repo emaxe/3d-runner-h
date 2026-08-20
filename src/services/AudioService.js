@@ -242,6 +242,22 @@ export class AudioService {
         osc.stop(t + 0.45);
         break;
       }
+
+      case 'near_miss': {
+        // Футуристический свистящий чирп (triangle sweep 520Hz -> 1180Hz за 90мс)
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(520, t);
+        osc.frequency.exponentialRampToValueAtTime(1180, t + 0.09);
+        gain.gain.setValueAtTime(0.28, t);
+        gain.gain.exponentialRampToValueAtTime(0.01, t + 0.09);
+        osc.connect(gain);
+        gain.connect(dest);
+        osc.start(t);
+        osc.stop(t + 0.09);
+        break;
+      }
     }
   }
 
