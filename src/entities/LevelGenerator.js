@@ -104,6 +104,14 @@ export class LevelGenerator {
       warnPillarSiren: new THREE.MeshBasicMaterial({ color: 0xf43f5e, transparent: true, opacity: 0.9 }),
       warnHoloSign: new THREE.MeshBasicMaterial({ color: 0xf43f5e, transparent: true, opacity: 0.5, side: THREE.DoubleSide }),
       warnStripeMat: new THREE.MeshBasicMaterial({ color: 0xfacc15 }),
+      spectatorSuitA: new THREE.MeshStandardMaterial({ color: 0x10b981, roughness: 0.5, metalness: 0.2, flatShading: true }),
+      spectatorSuitB: new THREE.MeshStandardMaterial({ color: 0x06b6d4, roughness: 0.5, metalness: 0.2, flatShading: true }),
+      spectatorDark: new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.6, metalness: 0.3, flatShading: true }),
+      spectatorVisor: new THREE.MeshBasicMaterial({ color: 0x38bdf8 }),
+      spectatorCheer: new THREE.MeshBasicMaterial({ color: 0xfacc15, transparent: true, opacity: 0.9 }),
+      tribuneFrame: new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.5, metalness: 0.4, flatShading: true }),
+      tribuneDeck: new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.8, flatShading: true }),
+      tribuneNeon: new THREE.MeshBasicMaterial({ color: 0x06b6d4, transparent: true, opacity: 0.85 }),
       powerups: {
         shield: new THREE.MeshBasicMaterial({ color: 0x38bdf8 }),
         magnet: new THREE.MeshBasicMaterial({ color: 0xf43f5e }),
@@ -193,12 +201,23 @@ export class LevelGenerator {
       warnPillarBase: new THREE.BoxGeometry(0.7, 0.35, 0.7),
       warnPillarShaft: new THREE.CylinderGeometry(0.18, 0.24, 3.6, 6),
       warnPillarSiren: new THREE.SphereGeometry(0.24, 8, 6),
-      warnHoloSign: new THREE.BoxGeometry(1.3, 0.55, 0.08)
+      warnHoloSign: new THREE.BoxGeometry(1.3, 0.55, 0.08),
+      spectatorTorso: new THREE.BoxGeometry(0.36, 0.44, 0.22),
+      spectatorHead: new THREE.BoxGeometry(0.22, 0.22, 0.22),
+      spectatorVisor: new THREE.BoxGeometry(0.20, 0.08, 0.06),
+      spectatorArm: new THREE.BoxGeometry(0.09, 0.34, 0.09),
+      spectatorLegs: new THREE.BoxGeometry(0.30, 0.38, 0.20),
+      spectatorCheerIcon: new THREE.OctahedronGeometry(0.14, 0),
+      tribunePlatform: new THREE.BoxGeometry(3.6, 0.25, 1.2),
+      tribuneStep: new THREE.BoxGeometry(2.0, 0.25, 0.4),
+      tribuneBackWall: new THREE.BoxGeometry(3.8, 1.2, 0.10),
+      tribuneRailing: new THREE.BoxGeometry(3.6, 0.06, 0.06)
     };
 
     this.distanceTextureCache = new Map();
     this.distanceMaterialCache = new Map();
 
+    this.geos.spectatorArm.translate(0, -0.17, 0);
     this.geos.coinCore.rotateX(Math.PI / 2);
     this.geos.diamondCore.rotateX(Math.PI / 2);
     this.geos.rubyCore.rotateX(Math.PI / 2);
@@ -232,6 +251,10 @@ export class LevelGenerator {
       this.materials.decorSporePodMat.color.setHex(0x34d399);
       this.materials.decorSporePodMat.emissive.setHex(0x10b981);
       this.materials.decorHoloOrbMat.color.setHex(0x06b6d4);
+      this.materials.spectatorSuitA.color.setHex(0x10b981);
+      this.materials.spectatorSuitB.color.setHex(0x06b6d4);
+      this.materials.spectatorVisor.color.setHex(0x34d399);
+      this.materials.tribuneNeon.color.setHex(0x06b6d4);
     } else if (b.id === 'solar_dunes') {
       this.materials.sceneryPrimary.color.setHex(0xd97706);
       this.materials.scenerySecondary.color.setHex(0xf59e0b);
@@ -243,6 +266,10 @@ export class LevelGenerator {
       this.materials.decorCargoMat.color.setHex(0x92400e);
       this.materials.decorSolarSailMat.color.setHex(0xfef08a);
       this.materials.decorHoloOrbMat.color.setHex(0xfbbf24);
+      this.materials.spectatorSuitA.color.setHex(0xd97706);
+      this.materials.spectatorSuitB.color.setHex(0xf59e0b);
+      this.materials.spectatorVisor.color.setHex(0xfef08a);
+      this.materials.tribuneNeon.color.setHex(0xfbbf24);
     } else if (b.id === 'glacial_peaks') {
       this.materials.sceneryPrimary.color.setHex(0x38bdf8);
       this.materials.scenerySecondary.color.setHex(0xa5f3fc);
@@ -252,6 +279,10 @@ export class LevelGenerator {
       this.materials.glowPillarMat.color.setHex(0x38bdf8);
       this.materials.holoMat.color.setHex(0xa5f3fc);
       this.materials.decorHoloOrbMat.color.setHex(0x38bdf8);
+      this.materials.spectatorSuitA.color.setHex(0x0284c7);
+      this.materials.spectatorSuitB.color.setHex(0x38bdf8);
+      this.materials.spectatorVisor.color.setHex(0xa5f3fc);
+      this.materials.tribuneNeon.color.setHex(0x38bdf8);
     } else {
       // Cyber Volcano
       this.materials.sceneryPrimary.color.setHex(0x7f1d1d);
@@ -265,6 +296,10 @@ export class LevelGenerator {
       this.materials.decorDataCoreMat.color.setHex(0xf43f5e);
       this.materials.decorDataCoreMat.emissive.setHex(0x991b1b);
       this.materials.decorHoloOrbMat.color.setHex(0xf43f5e);
+      this.materials.spectatorSuitA.color.setHex(0x991b1b);
+      this.materials.spectatorSuitB.color.setHex(0xf43f5e);
+      this.materials.spectatorVisor.color.setHex(0xfacc15);
+      this.materials.tribuneNeon.color.setHex(0xf43f5e);
     }
 
     this.initAtmosphericParticles(this.lastPlayerZ || 0);
@@ -438,7 +473,10 @@ export class LevelGenerator {
     this.populateExtendedDecor(chunkGroup, zPos);
     this.populateDistantScenery(chunkGroup, zPos);
 
-    // 5c. Outside-track Distance Markers & Boss Warning Pillars
+    // 5c. Outside-track spectators & tribunes (zero gameplay impact)
+    this.populateSpectators(chunkGroup, zPos, chunkZIndex);
+
+    // 5d. Outside-track Distance Markers & Boss Warning Pillars
     const chunkStartDistance = chunkZIndex * CONFIG.CHUNK_LENGTH;
     if (chunkZIndex > 0 && chunkStartDistance % CONFIG.DISTANCE_MARKER_INTERVAL === 0) {
       this.spawnDistanceMarker(chunkGroup, zPos, chunkStartDistance, chunkZIndex);
@@ -828,6 +866,158 @@ export class LevelGenerator {
       holo.position.set(side * (railX + 6 + Math.random() * 3), 0, zPos + 10 + Math.random() * 30);
       chunkGroup.add(holo);
     }
+  }
+
+  populateSpectators(chunkGroup, zPos, chunkZIndex) {
+    const railX = CONFIG.LANE_WIDTH * 1.5 + 1.2; // 5.4
+    const minX = railX + 1.5;  // ~6.9
+    const maxX = railX + 5.0;  // ~10.4
+    const roll = Math.random();
+
+    if (roll < 0.35) {
+      // Tribune stand with 2-3 fans on tiers
+      const side = Math.random() < 0.5 ? -1 : 1;
+      const tribuneX = side * (minX + 0.5);
+      const tribuneZ = zPos + 10 + Math.random() * (CONFIG.CHUNK_LENGTH - 20);
+      this.buildTribune(chunkGroup, tribuneX, tribuneZ, side);
+    } else if (roll < 0.65) {
+      // Ground cluster of 2-4 fans cheering together
+      const side = Math.random() < 0.5 ? -1 : 1;
+      const clusterX = side * (minX + Math.random() * 2.0);
+      const clusterZ = zPos + 10 + Math.random() * 28;
+      const count = 2 + Math.floor(Math.random() * 3);
+      for (let i = 0; i < count; i++) {
+        const x = clusterX + (Math.random() - 0.5) * 1.2;
+        const z = clusterZ + (Math.random() - 0.5) * 1.2;
+        this.buildSpectator(chunkGroup, x, 0, z);
+      }
+    } else if (roll < 0.85) {
+      // Dispersed singles (1-2 lone fans)
+      const count = 1 + (Math.random() < 0.5 ? 1 : 0);
+      for (let i = 0; i < count; i++) {
+        const side = Math.random() < 0.5 ? -1 : 1;
+        const x = side * (minX + Math.random() * (maxX - minX));
+        const z = zPos + 5 + Math.random() * (CONFIG.CHUNK_LENGTH - 10);
+        this.buildSpectator(chunkGroup, x, 0, z);
+      }
+    }
+    // 15% remainder: empty stretch (quiet scenic segment)
+  }
+
+  buildSpectator(chunkGroup, x, baseY, z) {
+    const group = new THREE.Group();
+    const bodyMat = Math.random() < 0.5 ? this.materials.spectatorSuitA : this.materials.spectatorSuitB;
+
+    // Legs
+    const legs = new THREE.Mesh(this.geos.spectatorLegs, this.materials.spectatorDark);
+    legs.position.y = baseY + 0.19;
+    group.add(legs);
+
+    // Torso
+    const torso = new THREE.Mesh(this.geos.spectatorTorso, bodyMat);
+    torso.position.y = baseY + 0.60;
+    group.add(torso);
+
+    // Head + visor
+    const head = new THREE.Mesh(this.geos.spectatorHead, this.materials.spectatorDark);
+    head.position.y = baseY + 0.93;
+    group.add(head);
+    const visor = new THREE.Mesh(this.geos.spectatorVisor, this.materials.spectatorVisor);
+    visor.position.set(0, baseY + 0.93, 0.12);
+    group.add(visor);
+
+    // Arm pivots (Groups at shoulder, arm mesh offset down)
+    const leftPivot = new THREE.Group();
+    leftPivot.position.set(-0.22, baseY + 0.78, 0);
+    const leftArm = new THREE.Mesh(this.geos.spectatorArm, bodyMat);
+    leftArm.position.y = -0.17;
+    leftPivot.add(leftArm);
+    group.add(leftPivot);
+
+    const rightPivot = new THREE.Group();
+    rightPivot.position.set(0.22, baseY + 0.78, 0);
+    const rightArm = new THREE.Mesh(this.geos.spectatorArm, bodyMat);
+    rightArm.position.y = -0.17;
+    rightPivot.add(rightArm);
+    group.add(rightPivot);
+
+    // Random behavior: 40% cheer (both arms + bounce + icon), 30% wave (one arm), 20% bounce, 10% static
+    const behavior = Math.random();
+    const phase = Math.random() * Math.PI * 2;
+    group.position.set(x, 0, z);
+    group.userData.baseY = baseY;
+    group.userData.phase = phase;
+    // Face the track: screen-left is +X, so a fan on +X side faces -X (rotation.y = PI/2), on -X side faces +X (rotation.y = -PI/2)
+    group.rotation.y = x > 0 ? Math.PI * 0.5 : -Math.PI * 0.5;
+
+    if (behavior < 0.4) {
+      leftPivot.userData.animate = 'spectatorWave';
+      leftPivot.userData.phase = phase;
+      rightPivot.userData.animate = 'spectatorWaveRight';
+      rightPivot.userData.phase = phase + 0.5;
+      group.userData.animate = 'spectatorBounce';
+      // Cheer icon (holographic shout diamond) above head
+      const icon = new THREE.Mesh(this.geos.spectatorCheerIcon, this.materials.spectatorCheer);
+      icon.position.y = baseY + 1.25;
+      icon.userData.animate = 'spectatorCheerIcon';
+      icon.userData.phase = phase;
+      icon.userData.baseY = baseY + 1.25;
+      group.add(icon);
+    } else if (behavior < 0.7) {
+      leftPivot.userData.animate = 'spectatorWave';
+      leftPivot.userData.phase = phase;
+    } else if (behavior < 0.9) {
+      group.userData.animate = 'spectatorBounce';
+    }
+    // else static
+
+    chunkGroup.add(group);
+  }
+
+  buildTribune(chunkGroup, x, z, side) {
+    const tribune = new THREE.Group();
+
+    // Tier 1 platform
+    const tier1 = new THREE.Mesh(this.geos.tribunePlatform, this.materials.tribuneDeck);
+    tier1.position.y = 0.35;
+    tribune.add(tier1);
+
+    // Tier 2 platform (stepped back toward the outside)
+    const tier2 = new THREE.Mesh(this.geos.tribunePlatform, this.materials.tribuneDeck);
+    tier2.position.set(side * 1.0, 0.8, 0);
+    tribune.add(tier2);
+
+    // Back wall
+    const backWall = new THREE.Mesh(this.geos.tribuneBackWall, this.materials.tribuneFrame);
+    backWall.position.set(side * 1.7, 1.4, 0);
+    tribune.add(backWall);
+
+    // Neon railing on tier 1 front edge
+    const rail = new THREE.Mesh(this.geos.tribuneRailing, this.materials.tribuneNeon);
+    rail.position.set(0, 0.5, 0.6);
+    tribune.add(rail);
+
+    // Support pillars
+    for (let p = 0; p < 4; p++) {
+      const pillar = new THREE.Mesh(this.geos.archPillar, this.materials.tribuneFrame);
+      pillar.scale.set(0.4, 0.3, 0.4);
+      pillar.position.set((p % 2 === 0 ? -1 : 1) * 1.5, 0.2, (p < 2 ? -1 : 1) * 0.5);
+      tribune.add(pillar);
+    }
+
+    // Fans on tiers (2-3)
+    const onTier1 = 1 + Math.floor(Math.random() * 2);
+    for (let i = 0; i < onTier1; i++) {
+      this.buildSpectator(tribune, (Math.random() - 0.5) * 1.2, 0.48, (Math.random() - 0.5) * 0.8);
+    }
+    const onTier2 = 1 + Math.floor(Math.random() * 2);
+    for (let i = 0; i < onTier2; i++) {
+      this.buildSpectator(tribune, side * 1.0 + (Math.random() - 0.5) * 1.2, 0.93, (Math.random() - 0.5) * 0.8);
+    }
+
+    tribune.position.set(x, 0, z);
+    tribune.rotation.y = side < 0 ? Math.PI * 0.15 : -Math.PI * 0.15;
+    chunkGroup.add(tribune);
   }
 
   /**
@@ -1534,25 +1724,27 @@ export class LevelGenerator {
       }
     }
 
-    // 5. Extended decor animation (floating, pulsing, spinning, beacons, holo rings)
+    // 5. Extended decor & spectator animation (floating, pulsing, spinning, beacons, holo rings, spectators)
     for (let i = 0; i < this.activeChunks.length; i++) {
       const chunk = this.activeChunks[i];
       if (!chunk.group || !chunk.group.children) continue;
       for (let j = 0; j < chunk.group.children.length; j++) {
-        const obj = chunk.group.children[j];
-        if (!obj || !obj.userData) continue;
-        this.animateDecorObject(obj, time, dt);
-        // Nested groups (pod clusters, antenna arrays, spires, holo rings)
-        if (obj.isGroup && obj.children) {
-          for (let k = 0; k < obj.children.length; k++) {
-            this.animateDecorObject(obj.children[k], time, dt);
-          }
-        }
+        this.animateDecorTree(chunk.group.children[j], time, dt);
       }
     }
 
     // 6. Atmospheric particles update
     this.updateAtmosphericParticles(playerZ, dt);
+  }
+
+  animateDecorTree(obj, time, dt) {
+    if (!obj) return;
+    this.animateDecorObject(obj, time, dt);
+    if (obj.isGroup && obj.children) {
+      for (let k = 0; k < obj.children.length; k++) {
+        this.animateDecorTree(obj.children[k], time, dt);
+      }
+    }
   }
 
   animateDecorObject(obj, time, dt) {
@@ -1581,6 +1773,18 @@ export class LevelGenerator {
       }
     } else if (tag === 'distanceBeaconSpin') {
       obj.rotation.y += dt * 2.0;
+    } else if (tag === 'spectatorWave') {
+      obj.rotation.z = Math.sin(time * 3.5 + phase) * 1.2;
+    } else if (tag === 'spectatorWaveRight') {
+      obj.rotation.z = Math.sin(time * 4.0 + phase) * -1.0;
+    } else if (tag === 'spectatorBounce') {
+      const baseY = obj.userData.baseY !== undefined ? obj.userData.baseY : 0;
+      obj.position.y = baseY + Math.abs(Math.sin(time * 2.5 + phase)) * 0.15;
+    } else if (tag === 'spectatorCheerIcon') {
+      const baseY = obj.userData.baseY !== undefined ? obj.userData.baseY : obj.position.y;
+      obj.position.y = baseY + Math.sin(time * 3.0 + phase) * 0.08;
+      obj.rotation.y = time * 2.5;
+      obj.scale.setScalar(0.8 + Math.sin(time * 6.0 + phase) * 0.3);
     }
   }
 }
