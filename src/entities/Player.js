@@ -65,6 +65,10 @@ export class Player {
     this.blasterGeo = new THREE.CylinderGeometry(0.08, 0.08, 0.8, 6);
     this.blasterGeo.rotateX(Math.PI / 2);
     this.blasterMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
+
+    // Preallocated objects for zero-allocation game loop
+    this._hitbox = { minX: 0, maxX: 0, minY: 0, maxY: 0, minZ: 0, maxZ: 0 };
+    this._animState = { isGrounded: false, isSliding: false, isDead: false, ghostTimer: 0, overdriveTimer: 0 };
   }
 
   reset(startWithShield = false) {
@@ -488,14 +492,13 @@ export class Player {
 
     // 9. Procedural Skeletal Animation
     this.model.shieldMesh.visible = this.hasShield;
+    this._animState.isGrounded = this.isGrounded;
+    this._animState.isSliding = this.isSliding;
+    this._animState.isDead = this.isDead;
+    this._animState.ghostTimer = this.ghostTimer;
+    this._animState.overdriveTimer = this.overdriveTimer;
     this.model.animate(
-      {
-        isGrounded: this.isGrounded,
-        isSliding: this.isSliding,
-        isDead: this.isDead,
-        ghostTimer: this.ghostTimer,
-        overdriveTimer: this.overdriveTimer
-      },
+      this._animState,
       performance.now() * 0.001,
       worldSpeed / CONFIG.INITIAL_SPEED
     );
@@ -520,13 +523,13 @@ export class Player {
       centerY = this.gravityDirection === 1 ? this.y - 0.45 : this.y + 0.45;
     }
 
-    return {
-      minX: this.x - 0.4,
-      maxX: this.x + 0.4,
-      minY: centerY - halfHeight,
-      maxY: centerY + halfHeight,
-      minZ: this.z - 0.35,
-      maxZ: this.z + 0.35
-    };
+    this._hitbox.minX = this.x - 0.4;
+    this._hitbox.maxX = this.x + 0.4;
+    this._hitbox.minY = centerY - halfHeight;
+    this._hitbox.maxY = centerY + halfHeight;
+    this._hitbox.minZ = this.z - 0.35;
+    this._hitbox.maxZ = this.z + 0.35;
+
+    return this._hitbox;
   }
 }

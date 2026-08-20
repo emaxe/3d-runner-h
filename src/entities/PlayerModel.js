@@ -307,6 +307,14 @@ export class PlayerModel {
 
     // Ghost Phase visual state
     this.isGhostMode = false;
+
+    // Cache ghost meshes for fast opacity updates during Ghost Phase
+    this._ghostMeshes = [];
+    this.group.traverse((c) => {
+      if (c.isMesh && c !== this.shieldGroup) {
+        this._ghostMeshes.push(c);
+      }
+    });
   }
 
   /**
@@ -349,11 +357,9 @@ export class PlayerModel {
       if (!this.isGhostMode) this.setGhostMode(true);
       const pulseFreq = state.ghostTimer < 1.0 ? 30 : 12;
       const alpha = 0.35 + Math.sin(time * pulseFreq) * 0.18;
-      this.group.traverse((child) => {
-        if (child.isMesh && child !== this.shieldGroup) {
-          child.material.opacity = alpha;
-        }
-      });
+      for (let i = 0; i < this._ghostMeshes.length; i++) {
+        this._ghostMeshes[i].material.opacity = alpha;
+      }
     } else if (this.isGhostMode) {
       this.setGhostMode(false);
     }

@@ -40,8 +40,11 @@ export class CameraManager {
 
     // 2. Dynamic FOV
     this.targetFov = isNitroActive ? this.nitroFov : this.baseFov;
+    const oldFov = this.camera.fov;
     this.camera.fov += (this.targetFov - this.camera.fov) * 5 * dt;
-    this.camera.updateProjectionMatrix();
+    if (Math.abs(this.camera.fov - oldFov) > 0.001) {
+      this.camera.updateProjectionMatrix();
+    }
 
     // 3. Look ahead on the track
     this.camera.lookAt(player.x * 0.5, lookTargetY, player.z + 12);
@@ -69,8 +72,11 @@ export class CameraManager {
     this.camera.lookAt(player.x, player.y, player.z);
 
     // Camera FOV tightens slightly for dramatic focus
+    const oldFov = this.camera.fov;
     this.camera.fov += (58 - this.camera.fov) * 3 * dt;
-    this.camera.updateProjectionMatrix();
+    if (Math.abs(this.camera.fov - oldFov) > 0.001) {
+      this.camera.updateProjectionMatrix();
+    }
 
     // Lingering vibration
     if (this.shakeIntensity > 0.001) {

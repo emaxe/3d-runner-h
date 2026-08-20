@@ -1290,86 +1290,76 @@ export class LevelGenerator {
         this.activeChunks.push(newChunk);
         this.currentChunkIndex++;
 
-        this.obstacles = this.obstacles.filter(o => o.hitbox.maxZ >= playerZ - 25);
-        this.coins = this.coins.filter(c => c.z >= playerZ - 25);
-        this.powerups = this.powerups.filter(p => p.z >= playerZ - 25);
+        let obsW = 0;
+        for (let i = 0; i < this.obstacles.length; i++) {
+          if (this.obstacles[i].hitbox.maxZ >= playerZ - 25) {
+            this.obstacles[obsW++] = this.obstacles[i];
+          }
+        }
+        this.obstacles.length = obsW;
+
+        let coinW = 0;
+        for (let i = 0; i < this.coins.length; i++) {
+          if (this.coins[i].z >= playerZ - 25) {
+            this.coins[coinW++] = this.coins[i];
+          }
+        }
+        this.coins.length = coinW;
+
+        let powW = 0;
+        for (let i = 0; i < this.powerups.length; i++) {
+          if (this.powerups[i].z >= playerZ - 25) {
+            this.powerups[powW++] = this.powerups[i];
+          }
+        }
+        this.powerups.length = powW;
       }
     }
 
     // Animate item rotations and glow pulses
     const time = now * 0.003;
 
-    // 1. Coins animation & glow pulse
+    // Shared material opacity updates (single update per frame)
+    this.materials.coinGlowMat.opacity = 0.2 + Math.sin(time * 4) * 0.15;
+    this.materials.powerupGlowMat.opacity = 0.2 + Math.sin(time * 3.5) * 0.15;
+    this.materials.laserWall.opacity = 0.7 + Math.sin(time * 9) * 0.2;
+    this.materials.barrierNeonGlow.opacity = 0.35 + Math.sin(time * 8) * 0.2;
+    this.materials.neonSignGlowMat.opacity = 0.5 + Math.sin(time * 5) * 0.3;
+
+    // 1. Coins animation
     for (let i = 0; i < this.coins.length; i++) {
       const c = this.coins[i];
       if (c.active) {
         c.mesh.rotation.z = time * 2;
         c.mesh.rotation.y = time * 1.5;
-        for (let j = 0; j < c.mesh.children.length; j++) {
-          const child = c.mesh.children[j];
-          if (child.userData && child.userData.animate === 'coinGlow') {
-            child.material.opacity = 0.2 + Math.sin(time * 4 + i) * 0.15;
-          }
-        }
       }
     }
 
-    // 2. Powerups animation & glow pulse
+    // 2. Powerups animation
     for (let i = 0; i < this.powerups.length; i++) {
       const p = this.powerups[i];
       if (p.active) {
         p.mesh.rotation.y = time * 2.5;
         p.mesh.rotation.x = time * 1.5;
-        for (let j = 0; j < p.mesh.children.length; j++) {
-          const child = p.mesh.children[j];
-          if (child.userData && child.userData.animate === 'powerupGlow') {
-            child.material.opacity = 0.2 + Math.sin(time * 3.5) * 0.15;
-          }
-        }
       }
     }
 
-    // 3. Obstacles animation (barriers, laser wall, drones)
+    // 3. Obstacles animation (drones)
     for (let i = 0; i < this.obstacles.length; i++) {
       const obs = this.obstacles[i];
       if (!obs.mesh || !obs.mesh.children) continue;
-
-      if (obs.type === 'floor_wall') {
-        this.materials.laserWall.opacity = 0.7 + Math.sin(time * 9) * 0.2;
-      }
 
       for (let j = 0; j < obs.mesh.children.length; j++) {
         const child = obs.mesh.children[j];
         if (!child.userData || !child.userData.animate) continue;
 
-        if (child.userData.animate === 'barrierNeon') {
-          const phase = child.userData.phase || 0;
-          child.material.opacity = 0.35 + Math.sin(time * 8 + phase) * 0.2;
-        } else if (child.userData.animate === 'laserScan') {
-          child.material.opacity = 0.5 + Math.sin(time * 9) * 0.3;
-        } else if (child.userData.animate === 'droneInnerRing') {
+        if (child.userData.animate === 'droneInnerRing') {
           child.rotation.z = -time * 5;
         } else if (child.userData.animate === 'droneThruster') {
           const to = obs.timeOffset || 0;
           const thrusterScale = 0.8 + Math.sin(time * 6 + to) * 0.3;
           child.scale.setScalar(thrusterScale);
           child.material.opacity = 0.6 + Math.sin(time * 6 + to) * 0.25;
-        }
-      }
-    }
-
-    // 4. Neon signs flicker animation in active chunks
-    for (let i = 0; i < this.activeChunks.length; i++) {
-      const chunk = this.activeChunks[i];
-      if (!chunk.group || !chunk.group.children) continue;
-      for (let j = 0; j < chunk.group.children.length; j++) {
-        const obj = chunk.group.children[j];
-        if (obj.userData && obj.userData.animate === 'neonSignFlicker') {
-          const phase = obj.userData.phase || 0;
-          const glowMesh = obj.children[1];
-          if (glowMesh && glowMesh.material) {
-            glowMesh.material.opacity = 0.5 + Math.sin(time * 5 + phase) * 0.3;
-          }
         }
       }
     }

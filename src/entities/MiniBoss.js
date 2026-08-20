@@ -31,6 +31,10 @@ export class MiniBoss {
     this.projectileGeo = new THREE.DodecahedronGeometry(0.5, 0);
     this.projectileMat = new THREE.MeshBasicMaterial({ color: 0xef4444 });
 
+    // Preallocated objects for zero-allocation combat loop
+    this._bossHitbox = { minX: 0, maxX: 0, minY: 0, maxY: 0, minZ: 0, maxZ: 0 };
+    this._dir = { vx: 0, vy: 0, vz: 0 };
+
     this.buildModel();
     this.scene.add(this.group);
     this.group.visible = false;
@@ -378,25 +382,23 @@ export class MiniBoss {
     this.muzzleR.intensity = Math.max(0, this.muzzleR.intensity - 30 * dt);
 
     // Check Player projectiles hitting Boss
-    const bossHitbox = {
-      minX: this.group.position.x - 2.2,
-      maxX: this.group.position.x + 2.2,
-      minY: this.group.position.y - 1.8,
-      maxY: this.group.position.y + 1.8,
-      minZ: this.group.position.z - 1.5,
-      maxZ: this.group.position.z + 1.5
-    };
+    this._bossHitbox.minX = this.group.position.x - 2.2;
+    this._bossHitbox.maxX = this.group.position.x + 2.2;
+    this._bossHitbox.minY = this.group.position.y - 1.8;
+    this._bossHitbox.maxY = this.group.position.y + 1.8;
+    this._bossHitbox.minZ = this.group.position.z - 1.5;
+    this._bossHitbox.maxZ = this.group.position.z + 1.5;
 
     for (let i = player.projectiles.length - 1; i >= 0; i--) {
       const p = player.projectiles[i];
       const pPos = p.mesh.position;
       if (
-        pPos.x >= bossHitbox.minX &&
-        pPos.x <= bossHitbox.maxX &&
-        pPos.y >= bossHitbox.minY &&
-        pPos.y <= bossHitbox.maxY &&
-        pPos.z >= bossHitbox.minZ &&
-        pPos.z <= bossHitbox.maxZ
+        pPos.x >= this._bossHitbox.minX &&
+        pPos.x <= this._bossHitbox.maxX &&
+        pPos.y >= this._bossHitbox.minY &&
+        pPos.y <= this._bossHitbox.maxY &&
+        pPos.z >= this._bossHitbox.minZ &&
+        pPos.z <= this._bossHitbox.maxZ
       ) {
         this.takeDamage(12);
         this.scene.remove(p.mesh);
@@ -547,11 +549,10 @@ export class MiniBoss {
     const dy = toY - fromY;
     const dz = toZ - fromZ;
     const len = Math.hypot(dx, dy, dz) || 1;
-    return {
-      vx: (dx / len) * speed,
-      vy: (dy / len) * speed,
-      vz: (dz / len) * speed
-    };
+    this._dir.vx = (dx / len) * speed;
+    this._dir.vy = (dy / len) * speed;
+    this._dir.vz = (dz / len) * speed;
+    return this._dir;
   }
 
   _spawnProjectile(sx, sy, sz, vx, vy, vz, life = 2.5, muzzle = null) {

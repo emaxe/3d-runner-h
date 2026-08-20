@@ -25,6 +25,16 @@ export class AudioService {
     // Master gains
     this.masterSfxGain = null;
     this.masterMusicGain = null;
+    this.noiseBuffer = null;
+  }
+
+  _createNoiseBuffer(duration = 1.0) {
+    if (!this.ctx) return null;
+    const size = Math.floor(this.ctx.sampleRate * duration);
+    const buf = this.ctx.createBuffer(1, size, this.ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < size; i++) data[i] = Math.random() * 2 - 1;
+    return buf;
   }
 
   init() {
@@ -42,6 +52,9 @@ export class AudioService {
       this.masterMusicGain = this.ctx.createGain();
       this.masterMusicGain.gain.setValueAtTime(this.musicVolume, this.ctx.currentTime);
       this.masterMusicGain.connect(this.ctx.destination);
+
+      // Cached noise buffer
+      this.noiseBuffer = this._createNoiseBuffer(1.0);
     }
 
     if (this.ctx && this.ctx.state === 'suspended') {
@@ -108,12 +121,8 @@ export class AudioService {
       }
 
       case 'slide': {
-        const bufferSize = this.ctx.sampleRate * 0.25;
-        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
-        const data = buffer.getChannelData(0);
-        for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
         const noise = this.ctx.createBufferSource();
-        noise.buffer = buffer;
+        noise.buffer = this.noiseBuffer;
         const filter = this.ctx.createBiquadFilter();
         filter.type = 'lowpass';
         filter.frequency.setValueAtTime(1200, t);
@@ -256,12 +265,8 @@ export class AudioService {
 
       case 'hit':
       case 'crash': {
-        const bufferSize = this.ctx.sampleRate * 0.4;
-        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
-        const data = buffer.getChannelData(0);
-        for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
         const noise = this.ctx.createBufferSource();
-        noise.buffer = buffer;
+        noise.buffer = this.noiseBuffer;
         const filter = this.ctx.createBiquadFilter();
         filter.type = 'lowpass';
         filter.frequency.setValueAtTime(500, t);
@@ -389,12 +394,8 @@ export class AudioService {
 
     // Hi-hat on odd steps
     if (step % 2 === 1) {
-      const bufferSize = this.ctx.sampleRate * 0.03;
-      const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
-      const data = buffer.getChannelData(0);
-      for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
       const noise = this.ctx.createBufferSource();
-      noise.buffer = buffer;
+      noise.buffer = this.noiseBuffer;
       const filter = this.ctx.createBiquadFilter();
       filter.type = 'highpass';
       filter.frequency.value = 7000;

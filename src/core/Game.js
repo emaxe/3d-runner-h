@@ -65,9 +65,12 @@ export class Game {
     // Watchdog & HUD throttling
     this.adaptivePx = null;
     this.fpsWindow = [];
+    this._fpsSum = 0;
+    this._fpsIdx = 0;
     this.lastAdaptiveChangeTime = 0;
     this.stableFpsFrames = 0;
     this.hudTimer = 0;
+    this._boundLoop = (t) => this.loop(t);
 
     // 6. Bind Input to Player actions
     this.bindInputs();
@@ -78,7 +81,7 @@ export class Game {
 
     // 8. Start RAF Loop
     this.lastFrameTime = performance.now();
-    requestAnimationFrame((t) => this.loop(t));
+    requestAnimationFrame(this._boundLoop);
   }
 
   bindInputs() {
@@ -589,6 +592,7 @@ export class Game {
           const obs = this.levelGen.obstacles[j];
           if (obs.destroyed) continue;
           const h = obs.hitbox;
+          if (Math.abs(h.minZ - pPos.z) > 6) continue;
           if (
             pPos.x >= h.minX - 0.25 && pPos.x <= h.maxX + 0.25 &&
             pPos.y >= h.minY - 0.25 && pPos.y <= h.maxY + 0.25 &&
@@ -717,14 +721,17 @@ export class Game {
       this.cameraManager.update(dt, this.player, this.player.isNitroActive);
 
       // FPS Watchdog for adaptive resolution
-      this.fpsWindow.push(dt);
-      if (this.fpsWindow.length > 45) {
-        this.fpsWindow.shift();
+      this._fpsSum += dt;
+      if (this.fpsWindow.length < 45) {
+        this.fpsWindow.push(dt);
+      } else {
+        this._fpsSum -= this.fpsWindow[this._fpsIdx];
+        this.fpsWindow[this._fpsIdx] = dt;
+        this._fpsIdx = (this._fpsIdx + 1) % 45;
       }
 
       if (this.fpsWindow.length >= 30) {
-        const sumDt = this.fpsWindow.reduce((a, b) => a + b, 0);
-        const avgDt = sumDt / this.fpsWindow.length;
+        const avgDt = this._fpsSum / this.fpsWindow.length;
         const timeSinceLastChange = timestamp - this.lastAdaptiveChangeTime;
 
         if (avgDt > 0.028 && timeSinceLastChange >= 2500) {
@@ -734,11 +741,15 @@ export class Game {
             this.engine.setAdaptivePixelRatio(newDpr);
             this.lastAdaptiveChangeTime = timestamp;
             this.fpsWindow.length = 0;
+            this._fpsSum = 0;
+            this._fpsIdx = 0;
             this.stableFpsFrames = 0;
           }
         } else if (avgDt < 0.016 && timeSinceLastChange >= 2500) {
           this.stableFpsFrames += this.fpsWindow.length;
           this.fpsWindow.length = 0;
+          this._fpsSum = 0;
+          this._fpsIdx = 0;
           if (this.stableFpsFrames >= 60) {
             const currentDpr = this.engine.getCurrentPixelRatio();
             if (this.engine.maxPixelRatio && currentDpr < this.engine.maxPixelRatio) {
@@ -771,6 +782,6 @@ export class Game {
     }
 
     this.engine.render();
-    requestAnimationFrame((t) => this.loop(t));
+    requestAnimationFrame(this._boundLoop);
   }
 }
