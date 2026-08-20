@@ -86,6 +86,14 @@ export class LevelGenerator {
       sceneryDune: new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.9, flatShading: true }),
       sceneryIceSpike: new THREE.MeshStandardMaterial({ color: 0xa5f3fc, roughness: 0.3, flatShading: true }),
       sceneryMagmaPool: new THREE.MeshBasicMaterial({ color: 0xfacc15, transparent: true, opacity: 0.6 }),
+      // Extended outside-track decor materials (shared, biome-tinted in setBiome)
+      holoMat: new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.5, side: THREE.DoubleSide }),
+      decorSporePodMat: new THREE.MeshStandardMaterial({ color: 0x34d399, emissive: 0x10b981, emissiveIntensity: 0.5, transparent: true, opacity: 0.9, flatShading: true }),
+      decorCargoMat: new THREE.MeshStandardMaterial({ color: 0x92400e, roughness: 0.7, metalness: 0.3, flatShading: true }),
+      decorSolarSailMat: new THREE.MeshBasicMaterial({ color: 0xfef08a, transparent: true, opacity: 0.6, side: THREE.DoubleSide }),
+      decorEmberMat: new THREE.MeshBasicMaterial({ color: 0xf97316, transparent: true, opacity: 0.9 }),
+      decorDataCoreMat: new THREE.MeshStandardMaterial({ color: 0xf43f5e, emissive: 0x991b1b, emissiveIntensity: 0.6, flatShading: true }),
+      decorHoloOrbMat: new THREE.MeshBasicMaterial({ color: 0x06b6d4, transparent: true, opacity: 0.45, depthWrite: false, blending: THREE.AdditiveBlending }),
       powerups: {
         shield: new THREE.MeshBasicMaterial({ color: 0x38bdf8 }),
         magnet: new THREE.MeshBasicMaterial({ color: 0xf43f5e }),
@@ -144,7 +152,29 @@ export class LevelGenerator {
       bush: new THREE.IcosahedronGeometry(0.4, 0),
       dune: new THREE.ConeGeometry(1.2, 0.6, 4),
       iceSpike: new THREE.ConeGeometry(0.3, 1.0, 4),
-      magmaPool: new THREE.CircleGeometry(0.8, 6)
+      magmaPool: new THREE.CircleGeometry(0.8, 6),
+      // Extended outside-track decor geometries (shared, created once)
+      distantSpire: new THREE.CylinderGeometry(0.6, 2.2, 14, 4),
+      distantSpireCap: new THREE.OctahedronGeometry(0.8, 0),
+      relicCore: new THREE.OctahedronGeometry(0.65, 0),
+      relicRing: new THREE.TorusGeometry(1.1, 0.05, 4, 12),
+      sensorMast: new THREE.CylinderGeometry(0.1, 0.16, 3.0, 5),
+      sensorDish: new THREE.ConeGeometry(0.65, 0.35, 6),
+      sensorGlow: new THREE.SphereGeometry(0.12, 4, 4),
+      industrialPipe: new THREE.CylinderGeometry(0.22, 0.22, 3.8, 6),
+      pipeFlange: new THREE.TorusGeometry(0.3, 0.05, 4, 8),
+      pipeExhaust: new THREE.ConeGeometry(0.2, 0.45, 5),
+      holoRing: new THREE.TorusGeometry(2.0, 0.06, 4, 14),
+      holoBase: new THREE.BoxGeometry(0.5, 1.0, 0.5),
+      crystalCluster: new THREE.ConeGeometry(0.22, 1.1, 4),
+      floatingCap: new THREE.ConeGeometry(0.75, 1.1, 4),
+      cargoBox: new THREE.BoxGeometry(0.7, 0.7, 0.7),
+      solarSail: new THREE.BoxGeometry(2.0, 1.2, 0.04),
+      sporePod: new THREE.IcosahedronGeometry(0.3, 0),
+      ember: new THREE.SphereGeometry(0.1, 4, 4),
+      dataTerminal: new THREE.DodecahedronGeometry(0.4, 0),
+      holoOrb: new THREE.IcosahedronGeometry(0.25, 0),
+      antennaDish: new THREE.ConeGeometry(0.3, 0.2, 5)
     };
 
     this.geos.coinCore.rotateX(Math.PI / 2);
@@ -176,6 +206,10 @@ export class LevelGenerator {
       this.materials.sceneryRock.color.setHex(0x334155);
       this.materials.neonSignGlowMat.color.setHex(0x06b6d4);
       this.materials.glowPillarMat.color.setHex(0x06b6d4);
+      this.materials.holoMat.color.setHex(0x06b6d4);
+      this.materials.decorSporePodMat.color.setHex(0x34d399);
+      this.materials.decorSporePodMat.emissive.setHex(0x10b981);
+      this.materials.decorHoloOrbMat.color.setHex(0x06b6d4);
     } else if (b.id === 'solar_dunes') {
       this.materials.sceneryPrimary.color.setHex(0xd97706);
       this.materials.scenerySecondary.color.setHex(0xf59e0b);
@@ -183,6 +217,10 @@ export class LevelGenerator {
       this.materials.sceneryRock.color.setHex(0x78350f);
       this.materials.neonSignGlowMat.color.setHex(0xfbbf24);
       this.materials.glowPillarMat.color.setHex(0xfbbf24);
+      this.materials.holoMat.color.setHex(0xfbbf24);
+      this.materials.decorCargoMat.color.setHex(0x92400e);
+      this.materials.decorSolarSailMat.color.setHex(0xfef08a);
+      this.materials.decorHoloOrbMat.color.setHex(0xfbbf24);
     } else if (b.id === 'glacial_peaks') {
       this.materials.sceneryPrimary.color.setHex(0x38bdf8);
       this.materials.scenerySecondary.color.setHex(0xa5f3fc);
@@ -190,6 +228,8 @@ export class LevelGenerator {
       this.materials.sceneryRock.color.setHex(0x1e293b);
       this.materials.neonSignGlowMat.color.setHex(0xa5f3fc);
       this.materials.glowPillarMat.color.setHex(0x38bdf8);
+      this.materials.holoMat.color.setHex(0xa5f3fc);
+      this.materials.decorHoloOrbMat.color.setHex(0x38bdf8);
     } else {
       // Cyber Volcano
       this.materials.sceneryPrimary.color.setHex(0x7f1d1d);
@@ -198,6 +238,11 @@ export class LevelGenerator {
       this.materials.sceneryRock.color.setHex(0x18000a);
       this.materials.neonSignGlowMat.color.setHex(0xf43f5e);
       this.materials.glowPillarMat.color.setHex(0xfacc15);
+      this.materials.holoMat.color.setHex(0xf43f5e);
+      this.materials.decorEmberMat.color.setHex(0xf97316);
+      this.materials.decorDataCoreMat.color.setHex(0xf43f5e);
+      this.materials.decorDataCoreMat.emissive.setHex(0x991b1b);
+      this.materials.decorHoloOrbMat.color.setHex(0xf43f5e);
     }
 
     this.initAtmosphericParticles(this.lastPlayerZ || 0);
@@ -366,6 +411,10 @@ export class LevelGenerator {
 
     // 5. Procedural Biome-Rich Scenery Elements Outside the Track
     this.populateScenery(chunkGroup, zPos);
+
+    // 5b. Extended outside-track decor (biome props + far horizon parallax)
+    this.populateExtendedDecor(chunkGroup, zPos);
+    this.populateDistantScenery(chunkGroup, zPos);
 
     // 6. Populate Gameplay Obstacles & Pickups
     if (chunkZIndex >= 2) {
@@ -600,6 +649,147 @@ export class LevelGenerator {
       cable.scale.set(1, 1, (railX * 2 + 2) / 1);
       cable.position.set(0, 4.5, cableZ);
       chunkGroup.add(cable);
+    }
+  }
+
+  /**
+   * Extended outside-track decor: biome-specific props (spore pods, cargo crates,
+   * solar sails, ice geysers, embers, data terminals) plus universal holographic
+   * orbs and antenna arrays. All placed beyond the rails (|X| > railX) — zero gameplay impact.
+   */
+  populateExtendedDecor(chunkGroup, zPos) {
+    const currentBiome = BIOMES[this.currentBiomeIndex] || BIOMES[0];
+    const railX = CONFIG.LANE_WIDTH * 1.5 + 1.2;
+
+    for (let i = 0; i < 4; i++) {
+      const sideZ = zPos + (i + 0.5) * (CONFIG.CHUNK_LENGTH / 4);
+      const side = Math.random() < 0.5 ? -1 : 1;
+
+      if (currentBiome.id === 'neon_meadows') {
+        // Spore pod cluster (glowing bio-pods)
+        const podGroup = new THREE.Group();
+        for (let p = 0; p < 3; p++) {
+          const pod = new THREE.Mesh(this.geos.sporePod, this.materials.decorSporePodMat);
+          const sc = 0.7 + Math.random() * 0.6;
+          pod.scale.setScalar(sc);
+          pod.position.set((p - 1) * 0.5, 0.5 * sc, (Math.random() - 0.5) * 0.8);
+          pod.userData.animate = 'decorPulse';
+          pod.userData.phase = Math.random() * Math.PI * 2;
+          podGroup.add(pod);
+        }
+        podGroup.position.set(side * (railX + 2.5 + Math.random() * 2), 0, sideZ);
+        chunkGroup.add(podGroup);
+      } else if (currentBiome.id === 'solar_dunes') {
+        // Cargo crate cluster
+        const crateGroup = new THREE.Group();
+        for (let c = 0; c < 3; c++) {
+          const crate = new THREE.Mesh(this.geos.cargoBox, this.materials.decorCargoMat);
+          const sc = 0.8 + Math.random() * 0.5;
+          crate.scale.setScalar(sc);
+          crate.position.set((c - 1) * 0.8, 0.35 * sc, (Math.random() - 0.5) * 0.6);
+          crate.rotation.y = Math.random() * Math.PI;
+          crateGroup.add(crate);
+        }
+        crateGroup.position.set(side * (railX + 2.5 + Math.random() * 2), 0, sideZ);
+        chunkGroup.add(crateGroup);
+
+        // Solar sail (floating translucent panel)
+        const sail = new THREE.Mesh(this.geos.solarSail, this.materials.decorSolarSailMat);
+        sail.position.set(-side * (railX + 3.5 + Math.random() * 2), 2.5 + Math.random() * 1.5, sideZ + 1.5);
+        sail.rotation.y = Math.random() * Math.PI;
+        sail.userData.animate = 'decorSpin';
+        sail.userData.spinSpeed = 0.3;
+        chunkGroup.add(sail);
+      } else if (currentBiome.id === 'glacial_peaks') {
+        // Ice geyser (frozen crystal spout)
+        const geyser = new THREE.Mesh(this.geos.iceSpike, this.materials.sceneryIceSpike);
+        const sc = 1.2 + Math.random() * 0.8;
+        geyser.scale.set(sc, sc * 1.4, sc);
+        geyser.position.set(side * (railX + 2.0 + Math.random() * 2), 0.5 * sc, sideZ);
+        geyser.rotation.y = Math.random() * Math.PI;
+        chunkGroup.add(geyser);
+      } else {
+        // Cyber Volcano: floating embers + data terminal
+        const ember = new THREE.Mesh(this.geos.ember, this.materials.decorEmberMat);
+        ember.position.set(side * (railX + 2.5 + Math.random() * 2), 1.5 + Math.random() * 2, sideZ);
+        ember.userData.animate = 'decorFloat';
+        ember.userData.baseY = ember.position.y;
+        ember.userData.phase = Math.random() * Math.PI * 2;
+        ember.userData.floatAmp = 0.3;
+        chunkGroup.add(ember);
+
+        const terminal = new THREE.Mesh(this.geos.dataTerminal, this.materials.decorDataCoreMat);
+        terminal.position.set(-side * (railX + 2.0 + Math.random() * 2), 0.9, sideZ + 1.0);
+        terminal.userData.animate = 'decorSpin';
+        terminal.userData.spinSpeed = 0.8;
+        chunkGroup.add(terminal);
+      }
+
+      // Universal: holographic orb (50% chance, far out)
+      if (Math.random() < 0.5) {
+        const orb = new THREE.Mesh(this.geos.holoOrb, this.materials.decorHoloOrbMat);
+        orb.position.set(side * (railX + 4.5 + Math.random() * 2.5), 2.0 + Math.random() * 2.0, sideZ + 1.0);
+        orb.userData.animate = 'decorFloat';
+        orb.userData.baseY = orb.position.y;
+        orb.userData.phase = Math.random() * Math.PI * 2;
+        orb.userData.floatAmp = 0.4;
+        chunkGroup.add(orb);
+      }
+
+      // Universal: antenna array (33% chance)
+      if (Math.random() < 0.33) {
+        const antenna = new THREE.Group();
+        const mast = new THREE.Mesh(this.geos.glowPillar, this.materials.glowPillarMat);
+        mast.position.y = 1.25;
+        const dish = new THREE.Mesh(this.geos.antennaDish, this.materials.decorHoloOrbMat);
+        dish.position.y = 2.5;
+        dish.userData.animate = 'decorPulse';
+        dish.userData.phase = Math.random() * Math.PI * 2;
+        antenna.add(mast);
+        antenna.add(dish);
+        antenna.position.set(side * (railX + 3.0 + Math.random() * 2), 0, sideZ + 1.5);
+        chunkGroup.add(antenna);
+      }
+    }
+  }
+
+  /**
+   * Far-horizon parallax: distant megastructure spires with pulsing beacons and
+   * holographic boundary rings. Creates depth beyond the playable corridor.
+   */
+  populateDistantScenery(chunkGroup, zPos) {
+    const railX = CONFIG.LANE_WIDTH * 1.5 + 1.2;
+
+    // 1-2 distant spires per chunk
+    const spireCount = 1 + (Math.random() < 0.5 ? 1 : 0);
+    for (let s = 0; s < spireCount; s++) {
+      const side = Math.random() < 0.5 ? -1 : 1;
+      const spire = new THREE.Group();
+      const shaft = new THREE.Mesh(this.geos.distantSpire, this.materials.sceneryRock);
+      const cap = new THREE.Mesh(this.geos.distantSpireCap, this.materials.sceneryGlow);
+      cap.position.y = 7.2;
+      cap.userData.animate = 'distantBeaconPulse';
+      cap.userData.phase = Math.random() * Math.PI * 2;
+      spire.add(shaft);
+      spire.add(cap);
+      spire.position.set(side * (railX + 9 + Math.random() * 8), 0, zPos + 5 + Math.random() * 40);
+      spire.scale.setScalar(0.8 + Math.random() * 0.6);
+      chunkGroup.add(spire);
+    }
+
+    // Holographic boundary ring (50% chance)
+    if (Math.random() < 0.5) {
+      const side = Math.random() < 0.5 ? -1 : 1;
+      const holo = new THREE.Group();
+      const base = new THREE.Mesh(this.geos.holoBase, this.materials.archStructure);
+      base.position.y = 0.5;
+      const ring = new THREE.Mesh(this.geos.holoRing, this.materials.holoMat);
+      ring.position.y = 3.0;
+      ring.userData.animate = 'holoRingRotate';
+      holo.add(base);
+      holo.add(ring);
+      holo.position.set(side * (railX + 6 + Math.random() * 3), 0, zPos + 10 + Math.random() * 30);
+      chunkGroup.add(holo);
     }
   }
 
@@ -1149,7 +1339,47 @@ export class LevelGenerator {
       }
     }
 
-    // 5. Atmospheric particles update
+    // 5. Extended decor animation (floating, pulsing, spinning, beacons, holo rings)
+    for (let i = 0; i < this.activeChunks.length; i++) {
+      const chunk = this.activeChunks[i];
+      if (!chunk.group || !chunk.group.children) continue;
+      for (let j = 0; j < chunk.group.children.length; j++) {
+        const obj = chunk.group.children[j];
+        if (!obj || !obj.userData) continue;
+        this.animateDecorObject(obj, time, dt);
+        // Nested groups (pod clusters, antenna arrays, spires, holo rings)
+        if (obj.isGroup && obj.children) {
+          for (let k = 0; k < obj.children.length; k++) {
+            this.animateDecorObject(obj.children[k], time, dt);
+          }
+        }
+      }
+    }
+
+    // 6. Atmospheric particles update
     this.updateAtmosphericParticles(playerZ, dt);
+  }
+
+  animateDecorObject(obj, time, dt) {
+    if (!obj || !obj.userData || !obj.userData.animate) return;
+    const tag = obj.userData.animate;
+    const phase = obj.userData.phase || 0;
+
+    if (tag === 'decorFloat') {
+      const baseY = obj.userData.baseY !== undefined ? obj.userData.baseY : obj.position.y;
+      const amp = obj.userData.floatAmp !== undefined ? obj.userData.floatAmp : 0.35;
+      obj.position.y = baseY + Math.sin(time * 2.0 + phase) * amp;
+    } else if (tag === 'decorPulse') {
+      if (obj.material) {
+        obj.material.opacity = 0.4 + Math.sin(time * 3.0 + phase) * 0.25;
+      }
+    } else if (tag === 'decorSpin') {
+      const speed = obj.userData.spinSpeed !== undefined ? obj.userData.spinSpeed : 0.5;
+      obj.rotation.y += dt * speed;
+    } else if (tag === 'distantBeaconPulse') {
+      obj.scale.setScalar(0.85 + Math.sin(time * 3.0 + phase) * 0.2);
+    } else if (tag === 'holoRingRotate') {
+      obj.rotation.z = time * 0.4;
+    }
   }
 }
