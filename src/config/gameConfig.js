@@ -66,6 +66,7 @@ export const CONFIG = {
   LEVEL_MAX_SPEED_BONUS: 6.0, // потолок прибавки скорости
   LEVEL_OBSTACLE_DENSITY: 0.08, // прибавка плотности препятствий за уровень
   LEVEL_MAX_OBSTACLE_DENSITY: 0.5, // потолок плотности
+  CEILING_OBSTACLE_CHANCE: 0.85, // вероятность препятствия на занятом потолочном лейне (паритет с полом ~0.85, флип не даёт тривиально свободный путь)
   LEVEL_BOSS_HP_BONUS: 30, // прибавка HP босса за уровень
   LEVEL_BOSS_ATTACK_BONUS: 0.14, // прибавка к скорости атак босса за уровень (было 0.08 — заметнее)
   LEVEL_BOSS_PROJECTILE_SPEED_STEP: 2.0, // прирост скорости снарядов босса (м/с) за уровень, clamp до 52

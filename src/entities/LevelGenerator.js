@@ -1002,7 +1002,7 @@ export class LevelGenerator {
         const x = laneXs[lane];
 
         if (lane !== freeCeilLane) {
-          if (Math.random() < 0.45) {
+          if (Math.random() < CONFIG.CEILING_OBSTACLE_CHANCE) {
             const isHangingSpike = Math.random() < 0.5;
             if (isHangingSpike) {
               const spikeGrp = new THREE.Group();
@@ -1056,6 +1056,41 @@ export class LevelGenerator {
       const extraZ = zStart + 8 + Math.random() * (CONFIG.CHUNK_LENGTH - 20);
       const extraLane = Math.floor(Math.random() * 3);
       const x = laneXs[extraLane];
+
+      // Половина экстра-препятствий на высоких уровнях уходит на потолок — обе поверхности усложняются равномерно
+      if (Math.random() < 0.5) {
+        if (Math.random() < 0.5) {
+          // Висячие шипы на потолке
+          const spikeGrp = new THREE.Group();
+          spikeGrp.position.set(x, 0, extraZ);
+          for (let s = -0.4; s <= 0.4; s += 0.4) {
+            const tip = new THREE.Mesh(this.geos.hangingCone, this.materials.spikeTip);
+            tip.position.set(s, CONFIG.CEILING_HEIGHT - 0.55, 0);
+            spikeGrp.add(tip);
+          }
+          chunkGroup.add(spikeGrp);
+          this.obstacles.push({
+            mesh: spikeGrp,
+            type: 'ceiling_spike',
+            hitbox: { minX: x - 0.9, maxX: x + 0.9, minY: CONFIG.CEILING_HEIGHT - 1.1, maxY: CONFIG.CEILING_HEIGHT, minZ: extraZ - 0.3, maxZ: extraZ + 0.3 }
+          });
+        } else {
+          // Потолочный низкий барьер
+          const barrierGrp = new THREE.Group();
+          barrierGrp.position.set(x, 0, extraZ);
+          const bar = new THREE.Mesh(this.geos.barrierBar, this.materials.barrierHazard);
+          bar.position.set(0, CONFIG.CEILING_HEIGHT - 0.4, 0);
+          barrierGrp.add(bar);
+          chunkGroup.add(barrierGrp);
+          this.obstacles.push({
+            mesh: barrierGrp,
+            type: 'ceiling_jump',
+            hitbox: { minX: x - 1.1, maxX: x + 1.1, minY: CONFIG.CEILING_HEIGHT - 0.8, maxY: CONFIG.CEILING_HEIGHT, minZ: extraZ - 0.3, maxZ: extraZ + 0.3 }
+          });
+        }
+        return;
+      }
+
       const roll = Math.random();
       if (roll < 0.3) {
         // Дополнительный барьер (прыжок)
