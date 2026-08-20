@@ -135,6 +135,13 @@ export class Engine {
     this.scene.fog.density = biome.fogDensity || 0.015;
     this.dirLight.color.setHex(biome.lightColor || 0xffffff);
     this.rimLight.color.setHex(biome.accentColor || 0x38bdf8);
+    this.rimLight.intensity = biome.id === 'cyber_volcano' ? 0.7 : 0.55;
+    this.hemiLight.color.setHex(biome.lightColor || 0x38bdf8);
+    this.hemiLight.groundColor.setHex(biome.groundColor || 0x0f172a);
+    // Синхронизируем цвет звездного поля с акцентом биома (лёгкий оттенок)
+    if (this.stars && this.stars.material.color) {
+      this.stars.material.color.setHex(biome.accentColor || 0xffffff);
+    }
   }
 
   onWindowResize() {

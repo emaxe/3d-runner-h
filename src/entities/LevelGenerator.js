@@ -20,10 +20,29 @@ export class LevelGenerator {
     this.coins = [];
     this.powerups = [];
 
+    this.ambientParticles = null;
+    this.ambientVelocities = null;
+    this.ambientPhases = null;
+    this.ambientCount = 0;
+    this.lastUpdateT = 0;
+    this.lastPlayerZ = 0;
+
     this.initSharedResources();
   }
 
   initSharedResources() {
+    this.ambientGeo = new THREE.BufferGeometry();
+    this.ambientMat = new THREE.PointsMaterial({
+      size: 0.18,
+      transparent: true,
+      opacity: 0.75,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+      vertexColors: true,
+      sizeAttenuation: true
+    });
+    this.ambientParticles = null;
+
     this.materials = {
       floor: new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.7, metalness: 0.2, flatShading: true }),
       ceiling: new THREE.MeshStandardMaterial({ color: 0x090d16, roughness: 0.8, metalness: 0.2, flatShading: true }),
@@ -32,13 +51,16 @@ export class LevelGenerator {
       archNeon: new THREE.MeshBasicMaterial({ color: 0x38bdf8 }),
       barrierFrame: new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.4, flatShading: true }),
       barrierHazard: new THREE.MeshStandardMaterial({ color: 0xf43f5e, roughness: 0.3, emissive: 0x991b1b, emissiveIntensity: 0.6, flatShading: true }),
+      barrierNeonGlow: new THREE.MeshBasicMaterial({ color: 0xf43f5e, transparent: true, opacity: 0.45 }),
       laserWall: new THREE.MeshBasicMaterial({ color: 0xef4444, transparent: true, opacity: 0.8 }),
       spike: new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.3, metalness: 0.5, flatShading: true }),
       spikeTip: new THREE.MeshBasicMaterial({ color: 0xef4444 }),
       droneBody: new THREE.MeshStandardMaterial({ color: 0x18181b, roughness: 0.3, metalness: 0.6, flatShading: true }),
       droneEye: new THREE.MeshBasicMaterial({ color: 0xf43f5e }),
+      droneThrusterMat: new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.8 }),
       coin: new THREE.MeshStandardMaterial({ color: 0xfbbf24, metalness: 0.8, roughness: 0.15, flatShading: true }),
       coinRing: new THREE.MeshBasicMaterial({ color: 0xfef08a }),
+      coinGlowMat: new THREE.MeshBasicMaterial({ color: 0xfef08a, transparent: true, opacity: 0.3, depthWrite: false, blending: THREE.AdditiveBlending }),
       gravCoin: new THREE.MeshStandardMaterial({ color: 0xa855f7, metalness: 0.85, roughness: 0.1, flatShading: true }),
       gravRing: new THREE.MeshBasicMaterial({ color: 0xe879f9 }),
       emeraldCoin: new THREE.MeshStandardMaterial({ color: 0x10b981, metalness: 0.8, roughness: 0.15, flatShading: true }),
@@ -47,12 +69,13 @@ export class LevelGenerator {
       diamondRing: new THREE.MeshBasicMaterial({ color: 0xa5f3fc }),
       rubyCoin: new THREE.MeshStandardMaterial({ color: 0xf43f5e, metalness: 0.8, roughness: 0.15, emissive: 0x991b1b, emissiveIntensity: 0.5, flatShading: true }),
       rubyRing: new THREE.MeshBasicMaterial({ color: 0xfca5a5 }),
+      powerupGlowMat: new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.3, depthWrite: false, blending: THREE.AdditiveBlending }),
       sceneryPrimary: new THREE.MeshStandardMaterial({ color: 0x10b981, roughness: 0.6, metalness: 0.2, flatShading: true }),
       scenerySecondary: new THREE.MeshStandardMaterial({ color: 0x06b6d4, roughness: 0.5, flatShading: true }),
       sceneryRock: new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.8, flatShading: true }),
       sceneryGlow: new THREE.MeshBasicMaterial({ color: 0x34d399 }),
       neonSignMat: new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.4, metalness: 0.5, flatShading: true }),
-      neonSignGlowMat: new THREE.MeshBasicMaterial({ color: 0x38bdf8 }),
+      neonSignGlowMat: new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.8 }),
       cableMat: new THREE.MeshBasicMaterial({ color: 0x334155 }),
       glowPillarMat: new THREE.MeshBasicMaterial({ color: 0x06b6d4, transparent: true, opacity: 0.7 }),
       glowPillarBaseMat: new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.5, flatShading: true }),
@@ -86,17 +109,23 @@ export class LevelGenerator {
       hangingCone: new THREE.ConeGeometry(0.38, 0.85, 5),
       barrierPylon: new THREE.BoxGeometry(0.28, 0.8, 0.28),
       barrierBar: new THREE.BoxGeometry(2.4, 0.32, 0.18),
+      barrierNeonEdge: new THREE.BoxGeometry(2.44, 0.06, 0.22),
       highBarrierBar: new THREE.BoxGeometry(2.4, 0.4, 0.2),
       fullLaserGrid: new THREE.BoxGeometry(CONFIG.LANE_WIDTH * 3 + 0.8, 2.7, 0.15),
       laserGeneratorPylon: new THREE.BoxGeometry(0.4, 2.8, 0.4),
+      laserScanLine: new THREE.BoxGeometry(CONFIG.LANE_WIDTH * 3 + 0.8, 0.08, 0.16),
       droneOcta: new THREE.OctahedronGeometry(0.5, 0),
       droneRing: new THREE.TorusGeometry(0.8, 0.04, 4, 12),
+      droneInnerRing: new THREE.TorusGeometry(0.62, 0.03, 4, 12),
       droneEye: new THREE.SphereGeometry(0.18, 6, 6),
+      droneThruster: new THREE.ConeGeometry(0.16, 0.3, 6),
       coinCore: new THREE.CylinderGeometry(0.35, 0.35, 0.1, 8),
       coinRim: new THREE.TorusGeometry(0.38, 0.04, 4, 12),
+      coinGlowDisc: new THREE.CircleGeometry(0.55, 12),
       diamondCore: new THREE.OctahedronGeometry(0.35, 0),
       rubyCore: new THREE.DodecahedronGeometry(0.35, 0),
       powerup: new THREE.OctahedronGeometry(0.5, 0),
+      powerupGlowDisc: new THREE.CircleGeometry(0.7, 10),
       treeTrunk: new THREE.CylinderGeometry(0.25, 0.4, 1.8, 5),
       treeCone: new THREE.ConeGeometry(1.3, 3.2, 5),
       treeCrystal: new THREE.DodecahedronGeometry(0.9, 0),
@@ -122,6 +151,9 @@ export class LevelGenerator {
     this.geos.diamondCore.rotateX(Math.PI / 2);
     this.geos.rubyCore.rotateX(Math.PI / 2);
     this.geos.hangingCone.rotateX(Math.PI);
+    this.geos.coinGlowDisc.rotateX(-Math.PI / 2);
+    this.geos.powerupGlowDisc.rotateX(-Math.PI / 2);
+    this.geos.droneThruster.rotateX(Math.PI);
   }
 
   setBiome(biomeIndex) {
@@ -133,6 +165,7 @@ export class LevelGenerator {
     this.materials.laneStripe.color.setHex(b.accentColor);
     this.materials.archNeon.color.setHex(b.accentColor);
     this.materials.barrierHazard.color.setHex(b.hazardColor);
+    this.materials.barrierNeonGlow.color.setHex(b.hazardColor);
     this.materials.spikeTip.color.setHex(b.hazardColor);
 
     // Scenery color shifts per biome
@@ -166,6 +199,100 @@ export class LevelGenerator {
       this.materials.neonSignGlowMat.color.setHex(0xf43f5e);
       this.materials.glowPillarMat.color.setHex(0xfacc15);
     }
+
+    this.initAtmosphericParticles(this.lastPlayerZ || 0);
+  }
+
+  initAtmosphericParticles(playerZ = this.lastPlayerZ || 0) {
+    const biome = BIOMES[this.currentBiomeIndex] || BIOMES[0];
+    const isTouch = (typeof window !== 'undefined') && (('ontouchstart' in window) || (navigator.maxTouchPoints > 0));
+    let count = biome.particleCount || 200;
+    if (isTouch) count = Math.min(count, 100);
+
+    const positions = new Float32Array(count * 3);
+    const colors = new Float32Array(count * 3);
+    const velocities = new Float32Array(count * 3);
+    const phases = new Float32Array(count);
+
+    const baseColor = new THREE.Color(biome.particleColor || 0x06b6d4);
+    const railX = CONFIG.LANE_WIDTH * 1.5 + 0.5;
+
+    for (let i = 0; i < count; i++) {
+      const idx = i * 3;
+      const brightness = 0.7 + Math.random() * 0.3;
+      colors[idx] = baseColor.r * brightness;
+      colors[idx + 1] = baseColor.g * brightness;
+      colors[idx + 2] = baseColor.b * brightness;
+
+      positions[idx] = -railX - 3 + Math.random() * (railX * 2 + 6);
+      positions[idx + 1] = 0.6 + Math.random() * (CONFIG.CEILING_HEIGHT - 1.2);
+      positions[idx + 2] = (playerZ - 8) + Math.random() * (CONFIG.CHUNK_LENGTH * 3 + 8);
+
+      phases[i] = Math.random() * Math.PI * 2;
+      velocities[idx] = 0;
+      velocities[idx + 1] = (biome.particleRise !== undefined ? biome.particleRise : 0.8) * (0.5 + Math.random());
+      velocities[idx + 2] = 0;
+    }
+
+    this.ambientGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    this.ambientGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+    if (this.ambientParticles) {
+      this.scene.remove(this.ambientParticles);
+    }
+    this.ambientParticles = new THREE.Points(this.ambientGeo, this.ambientMat);
+    this.scene.add(this.ambientParticles);
+
+    this.ambientVelocities = velocities;
+    this.ambientPhases = phases;
+    this.ambientCount = count;
+  }
+
+  updateAtmosphericParticles(playerZ, dt) {
+    if (!this.ambientParticles || !this.ambientGeo || !this.ambientVelocities) return;
+    const biome = BIOMES[this.currentBiomeIndex] || BIOMES[0];
+    const time = performance.now() * 0.001;
+    const posAttr = this.ambientGeo.getAttribute('position');
+    if (!posAttr) return;
+    const positions = posAttr.array;
+    const railX = CONFIG.LANE_WIDTH * 1.5 + 0.5;
+    const count = this.ambientCount;
+    const particleWind = biome.particleWind !== undefined ? biome.particleWind : 0.5;
+
+    for (let i = 0; i < count; i++) {
+      const idx = i * 3;
+      const phase = this.ambientPhases[i];
+
+      positions[idx] += (particleWind * 0.6 + Math.sin(time * 0.8 + phase) * 0.5) * dt;
+      positions[idx + 1] += (this.ambientVelocities[idx + 1] + Math.sin(time * 1.3 + phase) * 0.05) * dt;
+
+      // Wrap по Z
+      if (positions[idx + 2] > playerZ + CONFIG.CHUNK_LENGTH * 3) {
+        positions[idx + 2] = playerZ - 8;
+        positions[idx] = -railX - 3 + Math.random() * (railX * 2 + 6);
+        positions[idx + 1] = 0.6 + Math.random() * (CONFIG.CEILING_HEIGHT - 1.2);
+      } else if (positions[idx + 2] < playerZ - 8) {
+        positions[idx + 2] = playerZ + CONFIG.CHUNK_LENGTH * 3;
+        positions[idx] = -railX - 3 + Math.random() * (railX * 2 + 6);
+        positions[idx + 1] = 0.6 + Math.random() * (CONFIG.CEILING_HEIGHT - 1.2);
+      }
+
+      // Wrap по Y
+      if (positions[idx + 1] > CONFIG.CEILING_HEIGHT - 0.2) {
+        positions[idx + 1] = 0.6;
+      } else if (positions[idx + 1] < 0.4) {
+        positions[idx + 1] = CONFIG.CEILING_HEIGHT - 0.6;
+      }
+
+      // Wrap по X
+      if (positions[idx] < -railX - 4) {
+        positions[idx] = railX + 4;
+      } else if (positions[idx] > railX + 4) {
+        positions[idx] = -railX - 4;
+      }
+    }
+
+    posAttr.needsUpdate = true;
   }
 
   createChunk(chunkZIndex, level = 1) {
@@ -287,12 +414,31 @@ export class LevelGenerator {
           chunkGroup.add(bush);
         }
 
+        // Variational bushes
+        const extraBushes = 1 + Math.floor(Math.random() * 2);
+        for (let eb = 0; eb < extraBushes; eb++) {
+          const bush = new THREE.Mesh(this.geos.bush, this.materials.sceneryBush);
+          const bushSide = Math.random() < 0.5 ? -1 : 1;
+          bush.position.set(bushSide * (railX + 1.2 + Math.random() * 2.0), 0.25, sideZ + (Math.random() - 0.5) * 3);
+          bush.scale.setScalar(0.4 + Math.random() * 0.5);
+          bush.rotation.y = Math.random() * Math.PI * 2;
+          chunkGroup.add(bush);
+        }
+
       } else if (currentBiome.id === 'solar_dunes') {
         // Left: Floating antigravity solar pyramid
         const pyramid = new THREE.Mesh(this.geos.sceneryPyramid, this.materials.sceneryPrimary);
         pyramid.position.set(-railX - 2.5 - Math.random() * 2, 2.5 + Math.sin(i) * 0.8, sideZ);
         pyramid.rotation.y = i * 0.8;
         chunkGroup.add(pyramid);
+
+        // Small secondary pyramid near the big one
+        const smallPyramid = new THREE.Mesh(this.geos.sceneryPyramid, this.materials.scenerySecondary);
+        const pyrScale = 0.4 + Math.random() * 0.3;
+        smallPyramid.scale.setScalar(pyrScale);
+        smallPyramid.position.set(-railX - 1.2 - Math.random() * 1.5, 1.2 + Math.sin(i + 1) * 0.4, sideZ + 1.2);
+        smallPyramid.rotation.y = Math.random() * Math.PI * 2;
+        chunkGroup.add(smallPyramid);
 
         // Right: Solar capacitor monolith
         const pillar = new THREE.Mesh(this.geos.sceneryPillar, this.materials.scenerySecondary);
@@ -330,6 +476,18 @@ export class LevelGenerator {
           chunkGroup.add(spike);
         }
 
+        // Variational ice spikes
+        const extraSpikes = 1 + Math.floor(Math.random() * 2);
+        for (let esp = 0; esp < extraSpikes; esp++) {
+          const spike2 = new THREE.Mesh(this.geos.iceSpike, this.materials.sceneryIceSpike);
+          const spikeSide = Math.random() < 0.5 ? -1 : 1;
+          const sc = 0.5 + Math.random() * 0.3;
+          spike2.scale.set(sc, sc, sc);
+          spike2.position.set(spikeSide * (railX + 1.5 + Math.random() * 2.0), 0.5 * sc, sideZ + (Math.random() - 0.5) * 3);
+          spike2.rotation.y = Math.random() * Math.PI;
+          chunkGroup.add(spike2);
+        }
+
       } else {
         // Cyber Volcano: Obsidian basalt towers & magma vents
         const basalt = new THREE.Mesh(this.geos.sceneryPillar, this.materials.sceneryRock);
@@ -339,6 +497,13 @@ export class LevelGenerator {
         const lavaRock = new THREE.Mesh(this.geos.sceneryRock, this.materials.scenerySecondary);
         lavaRock.position.set(railX + 2.0 + Math.random() * 2, 0.8, sideZ);
         chunkGroup.add(lavaRock);
+
+        // Small lava rock near basalt
+        const smallLavaRock = new THREE.Mesh(this.geos.sceneryRock, this.materials.scenerySecondary);
+        const lrs = 0.5 + Math.random() * 0.3;
+        smallLavaRock.scale.set(lrs, lrs * 1.1, lrs);
+        smallLavaRock.position.set(-railX - 1.2 - Math.random() * 1.5, 0.5 * lrs, sideZ + 1.0);
+        chunkGroup.add(smallLavaRock);
 
         // Extra: glowing magma pools
         for (let p = 0; p < 2; p++) {
@@ -371,6 +536,8 @@ export class LevelGenerator {
       signGroup.add(glow);
       signGroup.position.set(railX + 0.3, 2.8, signZ);
       signGroup.rotation.y = -Math.PI / 2;
+      signGroup.userData.animate = 'neonSignFlicker';
+      signGroup.userData.phase = Math.random() * Math.PI * 2;
       chunkGroup.add(signGroup);
     }
 
@@ -463,9 +630,14 @@ export class LevelGenerator {
       const wall = new THREE.Mesh(this.geos.fullLaserGrid, this.materials.laserWall);
       wall.position.set(0, 1.35, 0);
 
+      const scanLine = new THREE.Mesh(this.geos.laserScanLine, this.materials.barrierNeonGlow);
+      scanLine.position.set(0, 1.35, 0);
+      scanLine.userData.animate = 'laserScan';
+
       wallGroup.add(pylonL);
       wallGroup.add(pylonR);
       wallGroup.add(wall);
+      wallGroup.add(scanLine);
       chunkGroup.add(wallGroup);
 
       this.obstacles.push({
@@ -517,7 +689,18 @@ export class LevelGenerator {
             const bar = new THREE.Mesh(this.geos.barrierBar, this.materials.barrierHazard);
             bar.position.set(0, 0.4, 0);
 
+            const neonTop = new THREE.Mesh(this.geos.barrierNeonEdge, this.materials.barrierNeonGlow);
+            neonTop.position.set(0, 0.62, 0);
+            neonTop.userData.animate = 'barrierNeon';
+            neonTop.userData.phase = Math.random() * Math.PI * 2;
+
+            const neonBottom = new THREE.Mesh(this.geos.barrierNeonEdge, this.materials.barrierNeonGlow);
+            neonBottom.position.set(0, 0.18, 0);
+            neonBottom.userData.animate = 'barrierNeon';
+            neonBottom.userData.phase = Math.random() * Math.PI * 2;
+
             barrierGrp.add(pL); barrierGrp.add(pR); barrierGrp.add(bar);
+            barrierGrp.add(neonTop); barrierGrp.add(neonBottom);
             chunkGroup.add(barrierGrp);
 
             this.obstacles.push({
@@ -540,7 +723,13 @@ export class LevelGenerator {
             const bar = new THREE.Mesh(this.geos.highBarrierBar, this.materials.barrierHazard);
             bar.position.set(0, 2.0, 0);
 
+            const neonEdge = new THREE.Mesh(this.geos.barrierNeonEdge, this.materials.barrierNeonGlow);
+            neonEdge.position.set(0, 1.8, 0);
+            neonEdge.userData.animate = 'barrierNeon';
+            neonEdge.userData.phase = Math.random() * Math.PI * 2;
+
             barrierGrp.add(pL); barrierGrp.add(pR); barrierGrp.add(bar);
+            barrierGrp.add(neonEdge);
             chunkGroup.add(barrierGrp);
 
             this.obstacles.push({
@@ -598,6 +787,10 @@ export class LevelGenerator {
             const pType = types[Math.floor(Math.random() * types.length)];
             const pMesh = new THREE.Mesh(this.geos.powerup, this.materials.powerups[pType]);
             pMesh.position.set(x, 1.2, z);
+            const pGlow = new THREE.Mesh(this.geos.powerupGlowDisc, this.materials.powerupGlowMat);
+            pGlow.position.y = -0.5;
+            pGlow.userData.animate = 'powerupGlow';
+            pMesh.add(pGlow);
             chunkGroup.add(pMesh);
             this.powerups.push({ mesh: pMesh, type: pType, active: true, z, isCeiling: false });
           } else {
@@ -684,7 +877,19 @@ export class LevelGenerator {
         pR.position.set(1.1, 0.4, 0);
         const bar = new THREE.Mesh(this.geos.barrierBar, this.materials.barrierHazard);
         bar.position.set(0, 0.4, 0);
+
+        const neonTop = new THREE.Mesh(this.geos.barrierNeonEdge, this.materials.barrierNeonGlow);
+        neonTop.position.set(0, 0.62, 0);
+        neonTop.userData.animate = 'barrierNeon';
+        neonTop.userData.phase = Math.random() * Math.PI * 2;
+
+        const neonBottom = new THREE.Mesh(this.geos.barrierNeonEdge, this.materials.barrierNeonGlow);
+        neonBottom.position.set(0, 0.18, 0);
+        neonBottom.userData.animate = 'barrierNeon';
+        neonBottom.userData.phase = Math.random() * Math.PI * 2;
+
         barrierGrp.add(pL); barrierGrp.add(pR); barrierGrp.add(bar);
+        barrierGrp.add(neonTop); barrierGrp.add(neonBottom);
         chunkGroup.add(barrierGrp);
         this.obstacles.push({
           mesh: barrierGrp,
@@ -721,7 +926,14 @@ export class LevelGenerator {
         pR.position.set(1.1, 1.4, 0);
         const bar = new THREE.Mesh(this.geos.highBarrierBar, this.materials.barrierHazard);
         bar.position.set(0, 2.0, 0);
+
+        const neonEdge = new THREE.Mesh(this.geos.barrierNeonEdge, this.materials.barrierNeonGlow);
+        neonEdge.position.set(0, 1.8, 0);
+        neonEdge.userData.animate = 'barrierNeon';
+        neonEdge.userData.phase = Math.random() * Math.PI * 2;
+
         barrierGrp.add(pL); barrierGrp.add(pR); barrierGrp.add(bar);
+        barrierGrp.add(neonEdge);
         chunkGroup.add(barrierGrp);
         this.obstacles.push({
           mesh: barrierGrp,
@@ -772,32 +984,49 @@ export class LevelGenerator {
     else { coreGeo = this.geos.coinCore; coreMat = this.materials.coin; ringMat = this.materials.coinRing; }
     const core = new THREE.Mesh(coreGeo, coreMat);
     const rim = new THREE.Mesh(this.geos.coinRim, ringMat);
+    const glow = new THREE.Mesh(this.geos.coinGlowDisc, this.materials.coinGlowMat);
+    glow.position.y = -0.1;
+    glow.userData.animate = 'coinGlow';
+    glow.userData.colorType = t;
     group.add(core);
     group.add(rim);
+    group.add(glow);
     return group;
   }
 
   /**
    * Hovering enemy drone — сборка из общих геометрий/материалов (без аллокаций).
-   * Корпус-октаэдр, энергетическое кольцо и сенсорный глаз, направленный на игрока (-Z).
+   * Корпус-октаэдр, энергетическое кольцо, сенсорный глаз, внутреннее кольцо и реактивное сопло.
    */
   createDroneMesh() {
     const group = new THREE.Group();
 
-    // Основной октаэдрический корпус
+    // 0: Основной октаэдрический корпус
     const body = new THREE.Mesh(this.geos.droneOcta, this.materials.droneBody);
 
-    // Внешнее энергетическое кольцо
+    // 1: Внешнее энергетическое кольцо
     const ring = new THREE.Mesh(this.geos.droneRing, this.materials.droneEye);
     ring.rotation.x = Math.PI / 2;
 
-    // Сенсорный глаз (смотрит на игрока: -Z)
+    // 2: Сенсорный глаз (смотрит на игрока: -Z)
     const eye = new THREE.Mesh(this.geos.droneEye, this.materials.droneEye);
     eye.position.set(0, 0, -0.35);
+
+    // 3: Внутреннее контр-вращающееся кольцо
+    const innerRing = new THREE.Mesh(this.geos.droneInnerRing, this.materials.droneEye);
+    innerRing.rotation.x = Math.PI / 2;
+    innerRing.userData.animate = 'droneInnerRing';
+
+    // 4: Реактивное сопло снизу
+    const thruster = new THREE.Mesh(this.geos.droneThruster, this.materials.droneThrusterMat);
+    thruster.position.y = -0.55;
+    thruster.userData.animate = 'droneThruster';
 
     group.add(body);
     group.add(ring);
     group.add(eye);
+    group.add(innerRing);
+    group.add(thruster);
     return group;
   }
 
@@ -816,9 +1045,16 @@ export class LevelGenerator {
       this.activeChunks.push(chunk);
       this.currentChunkIndex++;
     }
+
+    this.initAtmosphericParticles(0);
   }
 
   update(playerZ, level = 1) {
+    this.lastPlayerZ = playerZ;
+    const now = performance.now();
+    const dt = this.lastUpdateT ? Math.min(Math.max((now - this.lastUpdateT) / 1000, 0), 0.1) : 0.016;
+    this.lastUpdateT = now;
+
     if (this.activeChunks.length > 0) {
       const firstChunk = this.activeChunks[0];
       if (playerZ > (firstChunk.zIndex + 1) * CONFIG.CHUNK_LENGTH + 10) {
@@ -835,21 +1071,85 @@ export class LevelGenerator {
       }
     }
 
-    // Animate item rotations
-    const time = performance.now() * 0.003;
+    // Animate item rotations and glow pulses
+    const time = now * 0.003;
+
+    // 1. Coins animation & glow pulse
     for (let i = 0; i < this.coins.length; i++) {
       const c = this.coins[i];
       if (c.active) {
         c.mesh.rotation.z = time * 2;
         c.mesh.rotation.y = time * 1.5;
+        for (let j = 0; j < c.mesh.children.length; j++) {
+          const child = c.mesh.children[j];
+          if (child.userData && child.userData.animate === 'coinGlow') {
+            child.material.opacity = 0.2 + Math.sin(time * 4 + i) * 0.15;
+          }
+        }
       }
     }
+
+    // 2. Powerups animation & glow pulse
     for (let i = 0; i < this.powerups.length; i++) {
       const p = this.powerups[i];
       if (p.active) {
         p.mesh.rotation.y = time * 2.5;
         p.mesh.rotation.x = time * 1.5;
+        for (let j = 0; j < p.mesh.children.length; j++) {
+          const child = p.mesh.children[j];
+          if (child.userData && child.userData.animate === 'powerupGlow') {
+            child.material.opacity = 0.2 + Math.sin(time * 3.5) * 0.15;
+          }
+        }
       }
     }
+
+    // 3. Obstacles animation (barriers, laser wall, drones)
+    for (let i = 0; i < this.obstacles.length; i++) {
+      const obs = this.obstacles[i];
+      if (!obs.mesh || !obs.mesh.children) continue;
+
+      if (obs.type === 'floor_wall') {
+        this.materials.laserWall.opacity = 0.7 + Math.sin(time * 9) * 0.2;
+      }
+
+      for (let j = 0; j < obs.mesh.children.length; j++) {
+        const child = obs.mesh.children[j];
+        if (!child.userData || !child.userData.animate) continue;
+
+        if (child.userData.animate === 'barrierNeon') {
+          const phase = child.userData.phase || 0;
+          child.material.opacity = 0.35 + Math.sin(time * 8 + phase) * 0.2;
+        } else if (child.userData.animate === 'laserScan') {
+          child.material.opacity = 0.5 + Math.sin(time * 9) * 0.3;
+        } else if (child.userData.animate === 'droneInnerRing') {
+          child.rotation.z = -time * 5;
+        } else if (child.userData.animate === 'droneThruster') {
+          const to = obs.timeOffset || 0;
+          const thrusterScale = 0.8 + Math.sin(time * 6 + to) * 0.3;
+          child.scale.setScalar(thrusterScale);
+          child.material.opacity = 0.6 + Math.sin(time * 6 + to) * 0.25;
+        }
+      }
+    }
+
+    // 4. Neon signs flicker animation in active chunks
+    for (let i = 0; i < this.activeChunks.length; i++) {
+      const chunk = this.activeChunks[i];
+      if (!chunk.group || !chunk.group.children) continue;
+      for (let j = 0; j < chunk.group.children.length; j++) {
+        const obj = chunk.group.children[j];
+        if (obj.userData && obj.userData.animate === 'neonSignFlicker') {
+          const phase = obj.userData.phase || 0;
+          const glowMesh = obj.children[1];
+          if (glowMesh && glowMesh.material) {
+            glowMesh.material.opacity = 0.5 + Math.sin(time * 5 + phase) * 0.3;
+          }
+        }
+      }
+    }
+
+    // 5. Atmospheric particles update
+    this.updateAtmosphericParticles(playerZ, dt);
   }
 }
