@@ -67,7 +67,10 @@ export const CONFIG = {
   LEVEL_OBSTACLE_DENSITY: 0.08, // прибавка плотности препятствий за уровень
   LEVEL_MAX_OBSTACLE_DENSITY: 0.5, // потолок плотности
   LEVEL_BOSS_HP_BONUS: 30, // прибавка HP босса за уровень
-  LEVEL_BOSS_ATTACK_BONUS: 0.08, // прибавка к скорости атак босса за уровень
+  LEVEL_BOSS_ATTACK_BONUS: 0.14, // прибавка к скорости атак босса за уровень (было 0.08 — заметнее)
+  LEVEL_BOSS_PROJECTILE_SPEED_STEP: 2.0, // прирост скорости снарядов босса (м/с) за уровень, clamp до 52
+  BOSS_BASE_ATTACK_INTERVAL: 2.2, // базовый интервал атак босса на L1 (было 1.6 — старт медленнее для новичков)
+  BOSS_MIN_ATTACK_INTERVAL: 0.85, // минимальный порог перезарядки атак босса на высоких уровнях
 
   // Object Pooling
   PARTICLE_POOL_SIZE: 160,

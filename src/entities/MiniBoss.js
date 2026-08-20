@@ -368,9 +368,9 @@ export class MiniBoss {
       } else if (hpRatio <= 0.66) {
         phaseMul = 0.85;
       }
-
       const isHeavy = this.fireAttack(player);
-      this.attackTimer = (1.6 * phaseMul) / attackSpeedBonus + (isHeavy ? 0.25 : 0);
+      const raw = (CONFIG.BOSS_BASE_ATTACK_INTERVAL * phaseMul) / attackSpeedBonus + (isHeavy ? 0.2 : 0);
+      this.attackTimer = Math.max(CONFIG.BOSS_MIN_ATTACK_INTERVAL, raw);
     }
 
     // Затухание muzzle flash
@@ -436,38 +436,91 @@ export class MiniBoss {
 
   choosePattern() {
     const hpRatio = this.maxHp > 0 ? this.hp / this.maxHp : 0;
-    const level = this.level || 1;
+    const level = Math.min(4, Math.max(1, this.level || 1));
 
     let pool = [];
-    if (hpRatio > 0.66) {
-      // Phase 1 (hpRatio > 0.66): [P1(0.65), P2(0.35)]
-      pool = [
-        { id: 'single', weight: 0.65 },
-        { id: 'spread', weight: 0.35 }
-      ];
-    } else if (hpRatio > 0.33) {
-      // Phase 2 (0.33 < hpRatio <= 0.66): [P1(0.25), P2(0.40), P3(0.35)]
-      pool = [
-        { id: 'single', weight: 0.25 },
-        { id: 'spread', weight: 0.40 },
-        { id: 'pincer', weight: 0.35 }
-      ];
+    if (level === 1) {
+      if (hpRatio > 0.66) {
+        pool = [
+          { id: 'single', weight: 0.80 },
+          { id: 'spread', weight: 0.20 }
+        ];
+      } else if (hpRatio > 0.33) {
+        pool = [
+          { id: 'single', weight: 0.60 },
+          { id: 'spread', weight: 0.40 }
+        ];
+      } else {
+        pool = [
+          { id: 'single', weight: 0.40 },
+          { id: 'spread', weight: 0.60 }
+        ];
+      }
+    } else if (level === 2) {
+      if (hpRatio > 0.66) {
+        pool = [
+          { id: 'single', weight: 0.55 },
+          { id: 'spread', weight: 0.35 },
+          { id: 'pincer', weight: 0.10 }
+        ];
+      } else if (hpRatio > 0.33) {
+        pool = [
+          { id: 'single', weight: 0.25 },
+          { id: 'spread', weight: 0.40 },
+          { id: 'pincer', weight: 0.35 }
+        ];
+      } else {
+        pool = [
+          { id: 'spread', weight: 0.30 },
+          { id: 'pincer', weight: 0.40 },
+          { id: 'split', weight: 0.30 }
+        ];
+      }
+    } else if (level === 3) {
+      if (hpRatio > 0.66) {
+        pool = [
+          { id: 'single', weight: 0.35 },
+          { id: 'spread', weight: 0.35 },
+          { id: 'pincer', weight: 0.20 },
+          { id: 'split', weight: 0.10 }
+        ];
+      } else if (hpRatio > 0.33) {
+        pool = [
+          { id: 'spread', weight: 0.25 },
+          { id: 'pincer', weight: 0.40 },
+          { id: 'split', weight: 0.35 }
+        ];
+      } else {
+        pool = [
+          { id: 'spread', weight: 0.15 },
+          { id: 'pincer', weight: 0.40 },
+          { id: 'split', weight: 0.45 }
+        ];
+      }
     } else {
-      // Phase 3 (hpRatio <= 0.33, enrage): [P2(0.30), P3(0.35), P4(0.35)]
-      pool = [
-        { id: 'spread', weight: 0.30 },
-        { id: 'pincer', weight: 0.35 },
-        { id: 'split', weight: 0.35 }
-      ];
+      // Level 4+
+      if (hpRatio > 0.66) {
+        pool = [
+          { id: 'single', weight: 0.10 },
+          { id: 'spread', weight: 0.25 },
+          { id: 'pincer', weight: 0.35 },
+          { id: 'split', weight: 0.30 }
+        ];
+      } else if (hpRatio > 0.33) {
+        pool = [
+          { id: 'spread', weight: 0.10 },
+          { id: 'pincer', weight: 0.40 },
+          { id: 'split', weight: 0.50 }
+        ];
+      } else {
+        pool = [
+          { id: 'pincer', weight: 0.30 },
+          { id: 'split', weight: 0.70 }
+        ];
+      }
     }
 
-    // Уровневые ограничения: P3 доступен при level >= 2, P4 при level >= 3
-    const available = pool.filter(p => {
-      if (p.id === 'pincer' && level < 2) return false;
-      if (p.id === 'split' && level < 3) return false;
-      return true;
-    });
-
+    const available = pool;
     if (available.length === 0) {
       return 'single';
     }
@@ -483,6 +536,10 @@ export class MiniBoss {
     }
 
     return available[available.length - 1].id;
+  }
+
+  _getProjSpeed(base) {
+    return Math.min(52, base + (this.level - 1) * CONFIG.LEVEL_BOSS_PROJECTILE_SPEED_STEP);
   }
 
   _computeDir(fromX, fromY, fromZ, toX, toY, toZ, speed) {
@@ -535,7 +592,7 @@ export class MiniBoss {
     const targetX = player.x;
     const targetY = player.y + 0.9;
     const targetZ = player.z;
-    const speed = 42;
+    const speed = this._getProjSpeed(36);
 
     const dir = this._computeDir(startX, startY, startZ, targetX, targetY, targetZ, speed);
     this._spawnProjectile(startX, startY, startZ, dir.vx, dir.vy, dir.vz, 2.5, muzzle);
@@ -549,7 +606,7 @@ export class MiniBoss {
 
     const targetY = player.y + 0.9;
     const targetZ = player.z;
-    const speed = 38;
+    const speed = this._getProjSpeed(34);
     const lanes = [-CONFIG.LANE_WIDTH, 0, CONFIG.LANE_WIDTH];
 
     this.muzzleL.intensity = 2.5;
@@ -573,7 +630,7 @@ export class MiniBoss {
 
     const targetY = player.y + 0.9;
     const targetZ = player.z;
-    const speed = 42;
+    const speed = this._getProjSpeed(38);
 
     const targetLx = player.x + 1.2;
     const targetRx = player.x - 1.2;
@@ -596,7 +653,7 @@ export class MiniBoss {
     const syR = this.group.position.y + this.cannonR.position.y;
     const szR = this.group.position.z + this.cannonR.position.z - 0.6;
 
-    const speed = 40;
+    const speed = this._getProjSpeed(36);
     const targetZ = player.z;
     const targetLowY = 0.9;
     const targetHighY = 4.7;
