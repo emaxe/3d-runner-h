@@ -54,6 +54,14 @@ export class Game {
     this.currentBiomeIndex = 0;
     this.level = 1; // текущий уровень (растёт после каждого босса)
 
+    // Run-scoped stats (сбрасываются на каждом старте, показываются на Game Over)
+    this.runNearMisses = 0;
+    this.runActionDodges = 0;
+    this.runMilestones = 0;
+    this.runBossesDefeated = 0;
+    this.runMaxCombo = 1;
+    this.isNewRecord = false;
+
     // Watchdog & HUD throttling
     this.adaptivePx = null;
     this.fpsWindow = [];
@@ -160,6 +168,13 @@ export class Game {
     this.nextMilestoneDistance = CONFIG.MILESTONE_INTERVAL;
     this.currentBiomeIndex = 0;
     this.level = 1;
+    // Сброс per-run статистики
+    this.runNearMisses = 0;
+    this.runActionDodges = 0;
+    this.runMilestones = 0;
+    this.runBossesDefeated = 0;
+    this.runMaxCombo = 1;
+    this.isNewRecord = false;
     const hasStartShield = (this.storage.data.upgrades.shield_start || 0) > 0;
     this.player.reset(hasStartShield);
     // Применяем уровень апгрейда "Hyper Nitro Tank" (длительность буста и перезарядка)
@@ -251,11 +266,23 @@ export class Game {
     this.storage.data.runsCompleted++;
     this.storage.data.totalCoins += this.coinsGathered;
     this.storage.data.coins += this.coinsGathered;
-    this.storage.updateBestDistance(this.distance);
+    this.isNewRecord = this.storage.updateBestDistance(this.distance);
     this.checkAchievements();
 
     setTimeout(() => {
-      this.ui.showGameOver(this.distance, this.score, this.coinsGathered, this.storage.data.bestDistance);
+      this.ui.showGameOver({
+        distance: this.distance,
+        score: this.score,
+        coinsGathered: this.coinsGathered,
+        bestDistance: this.storage.data.bestDistance,
+        isNewRecord: this.isNewRecord,
+        nearMisses: this.runNearMisses,
+        actionDodges: this.runActionDodges,
+        milestones: this.runMilestones,
+        bossesDefeated: this.runBossesDefeated,
+        maxCombo: this.runMaxCombo,
+        level: this.level
+      });
     }, 1800);
   }
 
@@ -361,6 +388,7 @@ export class Game {
     if (this.player.comboScoreStreak >= 10 && this.player.combo < 10) {
       this.player.combo++;
       this.player.comboScoreStreak = 0;
+      if (this.player.combo > this.runMaxCombo) this.runMaxCombo = this.player.combo;
       if (this.player.combo > this.storage.data.maxComboReached) {
         this.storage.data.maxComboReached = this.player.combo;
         this.storage.save();
@@ -420,6 +448,7 @@ export class Game {
     if (this.player.comboScoreStreak >= 10 && this.player.combo < 10) {
       this.player.combo++;
       this.player.comboScoreStreak = 0;
+      if (this.player.combo > this.runMaxCombo) this.runMaxCombo = this.player.combo;
       if (this.player.combo > this.storage.data.maxComboReached) {
         this.storage.data.maxComboReached = this.player.combo;
         this.storage.save();
@@ -431,6 +460,7 @@ export class Game {
 
     // Статистика (поле totalNearMisses уже есть в StorageService)
     this.storage.data.totalNearMisses = (this.storage.data.totalNearMisses || 0) + 1;
+    this.runNearMisses++;
 
     // Звук и визуал
     this.audio.playSound('near_miss');
@@ -459,6 +489,7 @@ export class Game {
     if (this.player.comboScoreStreak >= 10 && this.player.combo < 10) {
       this.player.combo++;
       this.player.comboScoreStreak = 0;
+      if (this.player.combo > this.runMaxCombo) this.runMaxCombo = this.player.combo;
       if (this.player.combo > this.storage.data.maxComboReached) {
         this.storage.data.maxComboReached = this.player.combo;
         this.storage.save();
@@ -470,6 +501,7 @@ export class Game {
 
     // Статистика (для будущих ачивок/квестов)
     this.storage.data.totalActionDodges = (this.storage.data.totalActionDodges || 0) + 1;
+    this.runActionDodges++;
 
     // Звук и визуал (зелёные искры — отличимы от голубых у Near Miss)
     this.audio.playSound('near_miss');
@@ -628,6 +660,7 @@ export class Game {
         this.coinsGathered += coins;
         this.score += scoreBonus * this.player.combo;
         this.storage.data.totalMilestones = (this.storage.data.totalMilestones || 0) + 1;
+        this.runMilestones++;
         this.ui.showAlert(
           isMajor ? 'MILESTONE!' : `${Math.floor(this.nextMilestoneDistance)}m!`,
           `+${coins} Coins & +${scoreBonus} Score`
@@ -652,6 +685,7 @@ export class Game {
           // Boss Defeated Reward
           this.audio.bossMusicMode = false;
           this.storage.data.bossesDefeated++;
+          this.runBossesDefeated++;
           this.coinsGathered += 100;
           this.score += 2000 * this.player.combo;
           this.player.hasShield = true;

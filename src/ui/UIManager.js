@@ -333,19 +333,55 @@ export class UIManager {
     }
   }
 
-  showGameOver(distance, score, coinsGathered, bestDistance) {
+  showGameOver(distance, score, coinsGathered, bestDistance, runStats) {
     document.getElementById('hud-screen')?.classList.add('hidden');
     document.getElementById('gameover-screen')?.classList.remove('hidden');
+
+    // Поддержка как позиционных аргументов (легаси), так и единого объекта stats.
+    // Принимаем объект { distance, score, coinsGathered, bestDistance, isNewRecord,
+    // nearMisses, actionDodges, milestones, bossesDefeated, maxCombo, level }.
+    let s = null;
+    if (distance && typeof distance === 'object') {
+      s = distance;
+    } else {
+      s = {
+        distance, score, coinsGathered, bestDistance,
+        isNewRecord: false, nearMisses: 0, actionDodges: 0,
+        milestones: 0, bossesDefeated: 0, maxCombo: 1, level: 1
+      };
+    }
 
     const distEl = document.getElementById('gameover-dist');
     const scoreEl = document.getElementById('gameover-score');
     const coinsEl = document.getElementById('gameover-coins');
     const bestEl = document.getElementById('gameover-best');
 
-    if (distEl) distEl.textContent = `${Math.floor(distance)} m`;
-    if (scoreEl) scoreEl.textContent = Math.floor(score);
-    if (coinsEl) coinsEl.textContent = `+${coinsGathered} $`;
-    if (bestEl) bestEl.textContent = `${Math.floor(bestDistance)} m`;
+    if (distEl) distEl.textContent = `${Math.floor(s.distance)} m`;
+    if (scoreEl) scoreEl.textContent = Math.floor(s.score);
+    if (coinsEl) coinsEl.textContent = `+${s.coinsGathered} $`;
+    if (bestEl) bestEl.textContent = `${Math.floor(s.bestDistance)} m`;
+
+    // NEW RECORD badge
+    const recordBadge = document.getElementById('gameover-record-badge');
+    if (recordBadge) {
+      if (s.isNewRecord) recordBadge.classList.remove('hidden');
+      else recordBadge.classList.add('hidden');
+    }
+
+    // Detailed run performance stats
+    const nmEl = document.getElementById('gameover-near-misses');
+    const adEl = document.getElementById('gameover-action-dodges');
+    const maxComboEl = document.getElementById('gameover-max-combo');
+    const bossesEl = document.getElementById('gameover-bosses');
+    const milestonesEl = document.getElementById('gameover-milestones');
+    const levelEl = document.getElementById('gameover-level');
+
+    if (nmEl) nmEl.textContent = s.nearMisses;
+    if (adEl) adEl.textContent = s.actionDodges;
+    if (maxComboEl) maxComboEl.textContent = `x${s.maxCombo}`;
+    if (bossesEl) bossesEl.textContent = s.bossesDefeated;
+    if (milestonesEl) milestonesEl.textContent = s.milestones;
+    if (levelEl) levelEl.textContent = `LEVEL ${s.level}`;
 
     this.updateMenuStats();
   }

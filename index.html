@@ -205,11 +205,14 @@
     <!-- ==================== GAME OVER SCREEN ==================== -->
     <div id="gameover-screen" class="hidden pointer-events-auto absolute inset-0 z-40 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md">
       <div class="glass-panel w-full max-w-md p-6 sm:p-8 rounded-3xl border-rose-500/30 shadow-2xl flex flex-col items-center text-center animate-pulse-slow">
-        <span class="px-3 py-1 bg-rose-500/20 text-rose-400 border border-rose-500/40 text-xs font-bold uppercase tracking-widest rounded-full">RUN FINISHED</span>
+        <div class="flex items-center gap-2">
+          <span class="px-3 py-1 bg-rose-500/20 text-rose-400 border border-rose-500/40 text-xs font-bold uppercase tracking-widest rounded-full">RUN FINISHED</span>
+          <span id="gameover-record-badge" class="hidden px-3 py-1 bg-amber-500/20 text-amber-300 border border-amber-500/50 text-xs font-black uppercase tracking-widest rounded-full animate-bounce">🏆 NEW RECORD!</span>
+        </div>
         <h2 class="font-gaming text-5xl font-black italic text-rose-400 mt-2 mb-4">CRASHED!</h2>
 
         <!-- Stats Card -->
-        <div class="w-full bg-slate-900/60 rounded-2xl p-4 border border-slate-800 space-y-3 mb-6">
+        <div class="w-full bg-slate-900/60 rounded-2xl p-4 border border-slate-800 space-y-3 mb-4">
           <div class="flex justify-between items-center text-sm">
             <span class="text-slate-400 font-medium">Distance Traveled</span>
             <span id="gameover-dist" class="font-gaming text-2xl font-bold text-cyan-300">0 m</span>
@@ -225,6 +228,36 @@
           <div class="flex justify-between items-center text-sm pt-2 border-t border-slate-800">
             <span class="text-slate-400 font-medium">Best Record</span>
             <span id="gameover-best" class="font-gaming text-lg font-bold text-slate-200">0 m</span>
+          </div>
+        </div>
+
+        <!-- Run Performance Breakdown -->
+        <div class="w-full bg-slate-950/50 rounded-2xl p-3.5 border border-slate-800/80 mb-6">
+          <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2.5 text-left font-gaming flex items-center justify-between">
+            <span>RUN PERFORMANCE</span>
+            <span id="gameover-level" class="text-cyan-400 font-bold">LEVEL 1</span>
+          </div>
+          <div class="grid grid-cols-2 gap-2 text-left">
+            <div class="bg-slate-900/70 p-2 rounded-xl border border-slate-800 flex items-center justify-between">
+              <span class="text-xs text-slate-400">Near Misses</span>
+              <span id="gameover-near-misses" class="font-gaming text-base font-bold text-cyan-300">0</span>
+            </div>
+            <div class="bg-slate-900/70 p-2 rounded-xl border border-slate-800 flex items-center justify-between">
+              <span class="text-xs text-slate-400">Action Dodges</span>
+              <span id="gameover-action-dodges" class="font-gaming text-base font-bold text-emerald-400">0</span>
+            </div>
+            <div class="bg-slate-900/70 p-2 rounded-xl border border-slate-800 flex items-center justify-between">
+              <span class="text-xs text-slate-400">Max Combo</span>
+              <span id="gameover-max-combo" class="font-gaming text-base font-bold text-purple-300">x1</span>
+            </div>
+            <div class="bg-slate-900/70 p-2 rounded-xl border border-slate-800 flex items-center justify-between">
+              <span class="text-xs text-slate-400">Bosses Defeated</span>
+              <span id="gameover-bosses" class="font-gaming text-base font-bold text-rose-400">0</span>
+            </div>
+            <div class="col-span-2 bg-slate-900/70 p-2 rounded-xl border border-slate-800 flex items-center justify-between">
+              <span class="text-xs text-slate-400">Milestones Reached</span>
+              <span id="gameover-milestones" class="font-gaming text-base font-bold text-amber-300">0</span>
+            </div>
           </div>
         </div>
 
