@@ -438,6 +438,45 @@ export class Game {
     this.checkAchievements();
   }
 
+  /**
+   * Action Dodge — игрок впритирку перепрыгнул или проскользнул под препятствием
+   * В СВОЕЙ полосе. Награждает вертикальную точность (прыжок/подкат), дополняя
+   * Near Miss, который поощряет горизонтальную точность (зазор по X/Y).
+   */
+  onActionDodge(obs) {
+    if (this.state !== 'PLAYING' || this.player.isDead) return;
+
+    // Очки с учётом множителя комбо и пауэрапа 2x
+    const multiplier = this.player.multiplierTimer > 0 ? 2 : 1;
+    const scoreGain = CONFIG.ACTION_DODGE_SCORE * this.player.combo * multiplier;
+    this.score += scoreGain;
+
+    // Буст комбо-стрика (чуть меньше, чем у Near Miss, т.к. встречается чаще)
+    this.player.comboScoreStreak = Math.min(9, this.player.comboScoreStreak + CONFIG.ACTION_DODGE_COMBO_BONUS);
+    if (this.player.comboScoreStreak >= 10 && this.player.combo < 10) {
+      this.player.combo++;
+      this.player.comboScoreStreak = 0;
+      if (this.player.combo > this.storage.data.maxComboReached) {
+        this.storage.data.maxComboReached = this.player.combo;
+        this.storage.save();
+      }
+      this.ui.showAlert(`COMBO x${this.player.combo}!`, 'Multiplier Boost');
+    } else {
+      this.ui.showAlert('ACTION DODGE!', `+${scoreGain} Score`);
+    }
+
+    // Статистика (для будущих ачивок/квестов)
+    this.storage.data.totalActionDodges = (this.storage.data.totalActionDodges || 0) + 1;
+
+    // Звук и визуал (зелёные искры — отличимы от голубых у Near Miss)
+    this.audio.playSound('near_miss');
+    this.particles.spawn(this.player.x, this.player.y, this.player.z, 10, 0x00ff66, 3, 0.1, 0.35, 'spark', 1);
+    this.cameraManager.shake(0.18);
+
+    // Проверка ачивок
+    this.checkAchievements();
+  }
+
   checkAchievements() {
     if (!Array.isArray(this.storage.data.achievementsNotified)) {
       this.storage.data.achievementsNotified = [];

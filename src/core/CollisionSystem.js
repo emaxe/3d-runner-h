@@ -78,6 +78,32 @@ export class CollisionSystem {
           }
         }
       }
+
+      // Action Dodge: игрок впритирку перепрыгнул/прошёл под препятствием В СВОЕЙ полосе.
+      // Оценивается исключительно по вертикальному клиренсу между хитбоксами после
+      // прохождения — это неявно кодирует состояние прыжка/подката (стоя на полу
+      // сквозь препятствие пройти нельзя, и клиренс будет отрицательным).
+      if (
+        obs.actionDodgeCounted !== true &&
+        !obs.destroyed &&
+        !obs.wasHit &&
+        player.ghostTimer <= 0 &&
+        !player.isDead &&
+        this.game.state === 'PLAYING' &&
+        pHitbox.minZ > h.maxZ + CONFIG.ACTION_DODGE_Z_THRESHOLD
+      ) {
+        // Lazy-init флага, чтобы не трогать ~10 мест спавна препятствий в LevelGenerator
+        obs.actionDodgeCounted = true;
+        // Обязательно пересечение по X — только та же полоса
+        if (pHitbox.maxX > h.minX && pHitbox.minX < h.maxX) {
+          const yGapBelow = pHitbox.minY - h.maxY; // игрок сверху (перепрыгнул)
+          const yGapAbove = h.minY - pHitbox.maxY; // игрок снизу (подкат)
+          const verticalClearance = Math.max(yGapBelow, yGapAbove);
+          if (verticalClearance > 0 && verticalClearance < CONFIG.ACTION_DODGE_MAX_CLEARANCE) {
+            this.game.onActionDodge(obs);
+          }
+        }
+      }
     }
 
     // 2. Check Coin Magnet suction & Collection

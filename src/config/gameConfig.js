@@ -49,6 +49,12 @@ export const CONFIG = {
   NEAR_MISS_SCORE: 50, // базовые очки за Near Miss (умножаются на combo)
   NEAR_MISS_STREAK_BONUS: 3, // прибавка к comboScoreStreak за Near Miss
 
+  // Action Dodge System (точный прыжок/подкат в своей полосе — вертикальный клиренс)
+  ACTION_DODGE_Z_THRESHOLD: 0.3, // мин. зазор Z после прохождения препятствия
+  ACTION_DODGE_SCORE: 60, // базовые очки за Action Dodge (умножаются на combo)
+  ACTION_DODGE_MAX_CLEARANCE: 1.8, // макс. вертикальный зазор — только плотный проход
+  ACTION_DODGE_COMBO_BONUS: 2, // прибавка к comboScoreStreak за Action Dodge
+
   // World Events
   BOSS_INTERVAL_METERS: 400,
   BIOME_INTERVAL_METERS: 650,
