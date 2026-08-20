@@ -32,8 +32,71 @@ export class InputService {
     this.onCeiling = false; // true, когда игрок бежит по потолку
     this.enabled = true;
 
+    // Режим управления: 'swipe' | 'gyro'
+    this.controlMode = 'swipe';
+    this.gyroActive = false;
+    this.gyroThreshold = 15; // наклон в градусах (gamma) для смены полосы
+    this.gyroNeutralThreshold = 8; // возврат к нейтрали для повторного взвода
+    this.gyroCooldown = 600; // мс между срабатываниями (анти-дребезг)
+    this.lastGyroTriggerTime = 0;
+    this.gyroArmed = true;
+    this._boundOrientationHandler = this.handleOrientation.bind(this);
+
     this.initKeyboard();
     this.initTouchSwipes();
+  }
+
+  /** Переключает режим управления мобилкой ('swipe' | 'gyro'). */
+  setControlMode(mode) {
+    this.controlMode = mode === 'gyro' ? 'gyro' : 'swipe';
+    if (this.controlMode === 'gyro') {
+      this.enableGyro();
+    } else {
+      this.disableGyro();
+    }
+  }
+
+  /** Активирует слушатель наклона устройства. */
+  enableGyro() {
+    if (typeof DeviceOrientationEvent === 'undefined') return;
+    window.addEventListener('deviceorientation', this._boundOrientationHandler, { passive: true });
+    this.gyroActive = true;
+  }
+
+  /** Деактивирует слушатель наклона устройства. */
+  disableGyro() {
+    window.removeEventListener('deviceorientation', this._boundOrientationHandler);
+    this.gyroActive = false;
+    this.gyroArmed = true;
+  }
+
+  /**
+   * Обработчик наклона устройства. Наклон вправо (gamma>порог) → правая полоса,
+   * влево (gamma<порог) → левая полоса. Гистерезис + дебаунс против дребезга.
+   */
+  handleOrientation(e) {
+    if (!this.enabled || this.controlMode !== 'gyro' || e == null || e.gamma == null) return;
+
+    const gamma = e.gamma;
+    const now = performance.now();
+
+    // Возврат к нейтрали → взвод флага для следующего срабатывания
+    if (Math.abs(gamma) < this.gyroNeutralThreshold) {
+      this.gyroArmed = true;
+      return;
+    }
+
+    const cooldownOk = now - this.lastGyroTriggerTime >= this.gyroCooldown;
+
+    if (gamma > this.gyroThreshold && (this.gyroArmed || cooldownOk)) {
+      this.handlers.onMoveRight();
+      this.lastGyroTriggerTime = now;
+      this.gyroArmed = false;
+    } else if (gamma < -this.gyroThreshold && (this.gyroArmed || cooldownOk)) {
+      this.handlers.onMoveLeft();
+      this.lastGyroTriggerTime = now;
+      this.gyroArmed = false;
+    }
   }
 
   setHandlers(callbacks) {

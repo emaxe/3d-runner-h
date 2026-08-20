@@ -135,6 +135,7 @@ export class Game {
     this.audio.setSfxVolume(s.sfxVolume / 100);
     this.audio.setMusicVolume(s.musicVolume / 100);
     this.engine.setQuality(s.quality || 'high');
+    this.input.setControlMode(s.controlMode || 'swipe');
 
     const touchOverlay = document.getElementById('hud-touch-controls');
     if (touchOverlay) {

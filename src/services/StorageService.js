@@ -44,8 +44,9 @@ export class StorageService {
         musicVolume: 70,
         quality: 'high', // 'low', 'med', 'high'
         showTouchControls: true,
-        hideTouchControls: false
-      }
+        hideTouchControls: false,
+        controlMode: 'swipe' // 'swipe' | 'gyro'
+      },
     };
   }
 

@@ -114,6 +114,65 @@ export class SettingsModal {
       });
     }
 
+    // Mobile Control Mode buttons (swipe / gyro tilt)
+    const ctrlButtons = {
+      swipe: document.getElementById('ctrl-swipe'),
+      gyro: document.getElementById('ctrl-gyro')
+    };
+
+    const updateCtrlBtnState = (selected) => {
+      Object.keys(ctrlButtons).forEach((key) => {
+        const btn = ctrlButtons[key];
+        if (!btn) return;
+        if (key === selected) {
+          btn.className =
+            'py-2 rounded-xl glass-panel text-xs font-bold border-cyan-400 text-cyan-300 transition cursor-pointer';
+        } else {
+          btn.className =
+            'py-2 rounded-xl glass-panel text-xs font-bold text-slate-400 hover:border-slate-400 transition cursor-pointer';
+        }
+      });
+    };
+
+    const currentCtrl = this.game.storage.data.settings.controlMode || 'swipe';
+    updateCtrlBtnState(currentCtrl);
+
+    const applyControlMode = (mode) => {
+      this.game.storage.data.settings.controlMode = mode;
+      this.game.storage.save();
+      this.game.input.setControlMode(mode);
+      updateCtrlBtnState(mode);
+    };
+
+    if (ctrlButtons.swipe) {
+      ctrlButtons.swipe.addEventListener('click', () => applyControlMode('swipe'));
+    }
+    if (ctrlButtons.gyro) {
+      ctrlButtons.gyro.addEventListener('click', () => {
+        // iOS 13+ требует явного разрешения на DeviceOrientationEvent
+        if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+          DeviceOrientationEvent.requestPermission()
+            .then((permissionState) => {
+              if (permissionState === 'granted') {
+                applyControlMode('gyro');
+              } else {
+                alert('Гироскоп: разрешение не получено. Управление останется на свайпах.');
+                updateCtrlBtnState(this.game.storage.data.settings.controlMode || 'swipe');
+              }
+            })
+            .catch((err) => {
+              console.warn('[SettingsModal] DeviceOrientation permission error:', err);
+              applyControlMode('gyro');
+            });
+        } else if (typeof DeviceOrientationEvent !== 'undefined') {
+          applyControlMode('gyro');
+        } else {
+          alert('Гироскоп не поддерживается на этом устройстве.');
+          updateCtrlBtnState(this.game.storage.data.settings.controlMode || 'swipe');
+        }
+      });
+    }
+
     // Reset Save Progress
     const resetBtn = document.getElementById('btn-reset-save');
     if (resetBtn) {
