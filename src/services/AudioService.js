@@ -143,6 +143,70 @@ export class AudioService {
         break;
       }
 
+      case 'coin_emerald': {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(1046.50, t);
+        osc.frequency.setValueAtTime(1567.98, t + 0.06);
+        gain.gain.setValueAtTime(0.25, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
+        osc.connect(gain);
+        gain.connect(dest);
+        osc.start(t);
+        osc.stop(t + 0.2);
+        break;
+      }
+
+      case 'coin_diamond': {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(1318.51, t);
+        osc.frequency.setValueAtTime(1567.98, t + 0.07);
+        osc.frequency.setValueAtTime(2093.00, t + 0.14);
+        gain.gain.setValueAtTime(0.28, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.28);
+        osc.connect(gain);
+        gain.connect(dest);
+        osc.start(t);
+        osc.stop(t + 0.28);
+        break;
+      }
+
+      case 'coin_ruby': {
+        const osc1 = this.ctx.createOscillator();
+        const osc2 = this.ctx.createOscillator();
+        const filter = this.ctx.createBiquadFilter();
+        const gain = this.ctx.createGain();
+
+        osc1.type = 'sine';
+        osc1.frequency.setValueAtTime(880, t);
+        osc1.frequency.setValueAtTime(1108.73, t + 0.08);
+        osc1.frequency.setValueAtTime(1318.51, t + 0.16);
+
+        osc2.type = 'sawtooth';
+        osc2.frequency.setValueAtTime(1760, t);
+
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(3200, t);
+        filter.frequency.exponentialRampToValueAtTime(600, t + 0.3);
+
+        gain.gain.setValueAtTime(0.3, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+
+        osc1.connect(gain);
+        osc2.connect(filter);
+        filter.connect(gain);
+        gain.connect(dest);
+
+        osc1.start(t);
+        osc2.start(t);
+        osc1.stop(t + 0.3);
+        osc2.stop(t + 0.3);
+        break;
+      }
+
       case 'gravity': {
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();

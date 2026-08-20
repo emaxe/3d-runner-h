@@ -41,6 +41,12 @@ export class LevelGenerator {
       coinRing: new THREE.MeshBasicMaterial({ color: 0xfef08a }),
       gravCoin: new THREE.MeshStandardMaterial({ color: 0xa855f7, metalness: 0.85, roughness: 0.1, flatShading: true }),
       gravRing: new THREE.MeshBasicMaterial({ color: 0xe879f9 }),
+      emeraldCoin: new THREE.MeshStandardMaterial({ color: 0x10b981, metalness: 0.8, roughness: 0.15, flatShading: true }),
+      emeraldRing: new THREE.MeshBasicMaterial({ color: 0x6ee7b7 }),
+      diamondCoin: new THREE.MeshStandardMaterial({ color: 0x06b6d4, metalness: 0.8, roughness: 0.15, flatShading: true }),
+      diamondRing: new THREE.MeshBasicMaterial({ color: 0xa5f3fc }),
+      rubyCoin: new THREE.MeshStandardMaterial({ color: 0xf43f5e, metalness: 0.8, roughness: 0.15, emissive: 0x991b1b, emissiveIntensity: 0.5, flatShading: true }),
+      rubyRing: new THREE.MeshBasicMaterial({ color: 0xfca5a5 }),
       sceneryPrimary: new THREE.MeshStandardMaterial({ color: 0x10b981, roughness: 0.6, metalness: 0.2, flatShading: true }),
       scenerySecondary: new THREE.MeshStandardMaterial({ color: 0x06b6d4, roughness: 0.5, flatShading: true }),
       sceneryRock: new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.8, flatShading: true }),
@@ -88,6 +94,8 @@ export class LevelGenerator {
       droneEye: new THREE.SphereGeometry(0.18, 6, 6),
       coinCore: new THREE.CylinderGeometry(0.35, 0.35, 0.1, 8),
       coinRim: new THREE.TorusGeometry(0.38, 0.04, 4, 12),
+      diamondCore: new THREE.OctahedronGeometry(0.35, 0),
+      rubyCore: new THREE.DodecahedronGeometry(0.35, 0),
       powerup: new THREE.OctahedronGeometry(0.5, 0),
       treeTrunk: new THREE.CylinderGeometry(0.25, 0.4, 1.8, 5),
       treeCone: new THREE.ConeGeometry(1.3, 3.2, 5),
@@ -111,6 +119,8 @@ export class LevelGenerator {
     };
 
     this.geos.coinCore.rotateX(Math.PI / 2);
+    this.geos.diamondCore.rotateX(Math.PI / 2);
+    this.geos.rubyCore.rotateX(Math.PI / 2);
     this.geos.hangingCone.rotateX(Math.PI);
   }
 
@@ -473,12 +483,12 @@ export class LevelGenerator {
 
       // Bonus Grav-Coins on the ceiling over the wall
       for (let c = 0; c < 5; c++) {
-        const coinMesh = this.createCoinMesh(true);
+        const coinMesh = this.createCoinMesh('grav');
         const coinZ = zWall - 8 + c * 4;
         const coinY = CONFIG.CEILING_HEIGHT - 0.9;
         coinMesh.position.set(0, coinY, coinZ);
         chunkGroup.add(coinMesh);
-        this.coins.push({ mesh: coinMesh, active: true, isGravBonus: true, x: 0, y: coinY, z: coinZ });
+        this.coins.push({ mesh: coinMesh, active: true, type: 'grav', isGravBonus: true, x: 0, y: coinY, z: coinZ });
       }
       return;
     }
@@ -592,12 +602,13 @@ export class LevelGenerator {
             this.powerups.push({ mesh: pMesh, type: pType, active: true, z, isCeiling: false });
           } else {
             for (let c = 0; c < 3; c++) {
-              const coinMesh = this.createCoinMesh(false);
+              const type = this.rollFloorCoinType();
+              const coinMesh = this.createCoinMesh(type);
               const coinZ = z - 1.5 + c * 1.5;
               const coinY = 0.8 + Math.sin((c / 2) * Math.PI) * 0.7;
               coinMesh.position.set(x, coinY, coinZ);
               chunkGroup.add(coinMesh);
-              this.coins.push({ mesh: coinMesh, active: true, x, y: coinY, z: coinZ });
+              this.coins.push({ mesh: coinMesh, active: true, type, isGravBonus: false, x, y: coinY, z: coinZ });
             }
           }
         }
@@ -645,12 +656,13 @@ export class LevelGenerator {
         } else {
           // Free Ceiling Lane: Purple Grav-Coins
           for (let c = 0; c < 3; c++) {
-            const coinMesh = this.createCoinMesh(true);
+            const type = (c === 1 && Math.random() < 0.1) ? 'diamond' : 'grav';
+            const coinMesh = this.createCoinMesh(type);
             const coinZ = z - 1.5 + c * 1.5;
             const coinY = CONFIG.CEILING_HEIGHT - 0.8 - Math.sin((c / 2) * Math.PI) * 0.6;
             coinMesh.position.set(x, coinY, coinZ);
             chunkGroup.add(coinMesh);
-            this.coins.push({ mesh: coinMesh, active: true, isGravBonus: true, x, y: coinY, z: coinZ });
+            this.coins.push({ mesh: coinMesh, active: true, type, isGravBonus: true, x, y: coinY, z: coinZ });
           }
         }
       }
@@ -741,10 +753,25 @@ export class LevelGenerator {
     }
   }
 
-  createCoinMesh(isGrav) {
+  rollFloorCoinType() {
+    const r = Math.random();
+    if (r < 0.70) return 'gold';
+    if (r < 0.88) return 'emerald';
+    if (r < 0.97) return 'diamond';
+    return 'ruby';
+  }
+
+  createCoinMesh(type = 'gold') {
     const group = new THREE.Group();
-    const core = new THREE.Mesh(this.geos.coinCore, isGrav ? this.materials.gravCoin : this.materials.coin);
-    const rim = new THREE.Mesh(this.geos.coinRim, isGrav ? this.materials.gravRing : this.materials.coinRing);
+    const t = type || 'gold';
+    let coreGeo, coreMat, ringMat;
+    if (t === 'grav') { coreGeo = this.geos.coinCore; coreMat = this.materials.gravCoin; ringMat = this.materials.gravRing; }
+    else if (t === 'emerald') { coreGeo = this.geos.coinCore; coreMat = this.materials.emeraldCoin; ringMat = this.materials.emeraldRing; }
+    else if (t === 'diamond') { coreGeo = this.geos.diamondCore; coreMat = this.materials.diamondCoin; ringMat = this.materials.diamondRing; }
+    else if (t === 'ruby') { coreGeo = this.geos.rubyCore; coreMat = this.materials.rubyCoin; ringMat = this.materials.rubyRing; }
+    else { coreGeo = this.geos.coinCore; coreMat = this.materials.coin; ringMat = this.materials.coinRing; }
+    const core = new THREE.Mesh(coreGeo, coreMat);
+    const rim = new THREE.Mesh(this.geos.coinRim, ringMat);
     group.add(core);
     group.add(rim);
     return group;

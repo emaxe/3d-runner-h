@@ -81,3 +81,11 @@ export const CONFIG = {
   MILESTONE_MAJOR_SCORE: 2000,
   MILESTONE_MAJOR_SHAKE: 0.25
 };
+
+export const COIN_TYPES = {
+  gold:    { id: 'gold',    name: 'Gold Coin',       valueMult: 1,  nitro: 3.0,  score: 25,  color: 0xfbbf24, ringColor: 0xfef08a, particleCount: 6,  sound: 'coin' },
+  grav:    { id: 'grav',    name: 'Grav Coin',       valueMult: 2,  nitro: 5.0,  score: 50,  color: 0xa855f7, ringColor: 0xe879f9, particleCount: 10, sound: 'coin' },
+  emerald: { id: 'emerald', name: 'Cyber Emerald',   valueMult: 3,  nitro: 7.0,  score: 75,  color: 0x10b981, ringColor: 0x6ee7b7, particleCount: 8,  sound: 'coin_emerald' },
+  diamond: { id: 'diamond', name: 'Quantum Diamond', valueMult: 5,  nitro: 12.0, score: 150, color: 0x06b6d4, ringColor: 0xa5f3fc, particleCount: 12, sound: 'coin_diamond' },
+  ruby:    { id: 'ruby',    name: 'Plasma Ruby',     valueMult: 10, nitro: 20.0, score: 300, color: 0xf43f5e, ringColor: 0xfca5a5, particleCount: 16, sound: 'coin_ruby' }
+};

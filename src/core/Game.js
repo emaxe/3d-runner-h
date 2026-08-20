@@ -1,4 +1,4 @@
-import { CONFIG } from '../config/gameConfig.js';
+import { CONFIG, COIN_TYPES } from '../config/gameConfig.js';
 import { BIOMES } from '../config/biomes.js';
 import { SKINS } from '../config/skins.js';
 import { ACHIEVEMENTS } from '../config/achievements.js';
@@ -314,25 +314,28 @@ export class Game {
   collectCoin(coin) {
     coin.active = false;
     coin.mesh.visible = false;
+    const type = coin.type || (coin.isGravBonus ? 'grav' : 'gold');
+    const cfg = COIN_TYPES[type] || COIN_TYPES.gold;
     const multiplierLevel = this.storage.data.upgrades.coin_multiplier || 0;
-    const baseVal = 1 + multiplierLevel;
-    const val = coin.isGravBonus ? baseVal * 2 : baseVal;
+    const val = (1 + multiplierLevel) * cfg.valueMult;
     this.coinsGathered += val;
-    this.player.nitroEnergy = Math.min(CONFIG.NITRO_MAX_ENERGY, this.player.nitroEnergy + (coin.isGravBonus ? 5.0 : 3.0));
-    this.score += (coin.isGravBonus ? 50 : 25) * this.player.combo;
-    this.audio.playSound('coin');
+    this.player.nitroEnergy = Math.min(CONFIG.NITRO_MAX_ENERGY, this.player.nitroEnergy + cfg.nitro);
+    this.score += cfg.score * this.player.combo;
+    this.audio.playSound(cfg.sound);
 
-    const particleColor = coin.isGravBonus ? 0xa855f7 : 0xfbbf24;
+    const particleColor = cfg.color;
     this.particles.spawn(
       coin.mesh.position.x,
       coin.mesh.position.y,
       coin.mesh.position.z,
-      coin.isGravBonus ? 10 : 6,
+      cfg.particleCount,
       particleColor,
       3,
       0.2,
       0.35
     );
+
+    if (cfg.valueMult >= 5) this.ui.showAlert(cfg.name.toUpperCase() + '!', '+' + val + ' Coins & Nitro Boost');
 
     // Occasional confetti burst on coin pickup
     if (Math.random() < 0.12) {
