@@ -36,6 +36,8 @@ export class Player {
     this.slowmoTimer = 0;
     this.invulnerableTimer = 0;
     this.ghostTimer = 0;
+    this.overdriveTimer = 0;
+    this.overdriveShootTimer = 0;
 
     // Nitro
     this.nitroEnergy = 40;
@@ -90,6 +92,8 @@ export class Player {
     this.invulnerableTimer = 0;
     this.ghostTimer = 0;
     this.model.setGhostMode(false);
+    this.overdriveTimer = 0;
+    this.overdriveShootTimer = 0;
     this.nitroEnergy = 40;
     this.isNitroActive = false;
     this.nitroTimer = 0;
@@ -342,6 +346,14 @@ export class Player {
     if (this.slowmoTimer > 0) this.slowmoTimer -= dt;
     if (this.invulnerableTimer > 0) this.invulnerableTimer -= dt;
     if (this.ghostTimer > 0) this.ghostTimer -= dt;
+    if (this.overdriveTimer > 0) {
+      this.overdriveTimer -= dt;
+      this.overdriveShootTimer -= dt;
+      if (this.overdriveShootTimer <= 0) {
+        this.shootBlaster();
+        this.overdriveShootTimer = CONFIG.OVERDRIVE_FIRE_RATE || 0.14;
+      }
+    }
 
     // 6. Nitro Update & Recharge
     if (this.isNitroActive) {
@@ -447,6 +459,22 @@ export class Player {
       );
     }
 
+    // 6f. Overdrive plasma sparks
+    if (this.overdriveTimer > 0 && Math.random() < 0.4) {
+      this.particles.spawn(
+        this.x + (Math.random() - 0.5) * 0.4,
+        this.y + (Math.random() - 0.5) * 0.4,
+        this.z + 0.3,
+        1,
+        0xf97316,
+        2.0,
+        0.1,
+        0.25,
+        'spark',
+        1
+      );
+    }
+
     // 7. Gravity Visual Inversion Roll & Smooth Bank Angle
     const targetRotZ = this.gravityDirection === 1 ? 0 : Math.PI;
     this.model.group.rotation.z += (targetRotZ - this.model.group.rotation.z) * 12 * dt;
@@ -465,7 +493,8 @@ export class Player {
         isGrounded: this.isGrounded,
         isSliding: this.isSliding,
         isDead: this.isDead,
-        ghostTimer: this.ghostTimer
+        ghostTimer: this.ghostTimer,
+        overdriveTimer: this.overdriveTimer
       },
       performance.now() * 0.001,
       worldSpeed / CONFIG.INITIAL_SPEED

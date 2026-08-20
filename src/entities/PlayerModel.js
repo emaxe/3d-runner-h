@@ -20,7 +20,8 @@ export class PlayerModel {
       accent: new THREE.MeshStandardMaterial({ color: 0xf59e0b, roughness: 0.2, metalness: 0.4, flatShading: true }),
       flame: new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.85 }),
       neon: new THREE.MeshBasicMaterial({ color: 0x38bdf8 }),
-      gauntlet: new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.3, metalness: 0.6, flatShading: true })
+      gauntlet: new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.3, metalness: 0.6, flatShading: true }),
+      overdriveAura: new THREE.MeshBasicMaterial({ color: 0xf97316, transparent: true, opacity: 0.55, wireframe: true })
     };
 
     this.buildModel();
@@ -298,6 +299,12 @@ export class PlayerModel {
     // Property alias for external access
     this.shieldMesh = this.shieldGroup;
 
+    // 7. Plasma Overdrive wireframe aura
+    const auraGeo = new THREE.IcosahedronGeometry(0.85, 1);
+    this.overdriveAura = new THREE.Mesh(auraGeo, this.materials.overdriveAura);
+    this.overdriveAura.visible = false;
+    this.group.add(this.overdriveAura);
+
     // Ghost Phase visual state
     this.isGhostMode = false;
   }
@@ -379,6 +386,20 @@ export class PlayerModel {
       this.shieldDome.rotation.x += 0.01;
       this.shieldRing1.rotation.z += 0.03;
       this.shieldRing2.rotation.y += 0.025;
+    }
+
+    // Plasma Overdrive aura
+    if (state.overdriveTimer > 0) {
+      this.overdriveAura.visible = true;
+      this.overdriveAura.rotation.y = time * 5;
+      this.overdriveAura.rotation.x = time * 3;
+      const auraPulse = 1.0 + Math.sin(time * 20) * 0.08;
+      this.overdriveAura.scale.set(auraPulse, auraPulse, auraPulse);
+      if (this.coreHalo) {
+        this.coreHalo.scale.set(1.4, 1.4, 1.4);
+      }
+    } else if (this.overdriveAura) {
+      this.overdriveAura.visible = false;
     }
 
     // Death animation

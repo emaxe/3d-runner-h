@@ -302,7 +302,8 @@ export class UIManager {
     const mult = player.multiplierTimer > 0 ? Math.ceil(player.multiplierTimer) : 0;
     const slow = player.slowmoTimer > 0 ? Math.ceil(player.slowmoTimer) : 0;
     const ghost = player.ghostTimer > 0 ? Math.ceil(player.ghostTimer) : 0;
-    const powerupsHash = `${hasShield ? 1 : 0}_${mag}_${mult}_${slow}_${ghost}`;
+    const od = player.overdriveTimer > 0 ? Math.ceil(player.overdriveTimer) : 0;
+    const powerupsHash = `${hasShield ? 1 : 0}_${mag}_${mult}_${slow}_${ghost}_${od}`;
 
     if (powerupsHash !== this._hudCache.powerups) {
       const pList = document.getElementById('hud-powerups-list');
@@ -322,6 +323,9 @@ export class UIManager {
         }
         if (ghost > 0) {
           html += `<div class="px-2.5 py-1 rounded-xl bg-purple-500/20 text-purple-300 border border-purple-500/40 text-xs font-bold font-gaming flex items-center space-x-1"><span>👻 GHOST</span><span>${ghost}s</span></div>`;
+        }
+        if (od > 0) {
+          html += `<div class="px-2.5 py-1 rounded-xl bg-orange-500/20 text-orange-300 border border-orange-500/40 text-xs font-bold font-gaming flex items-center space-x-1"><span>🔥 OVERDRIVE</span><span>${od}s</span></div>`;
         }
         pList.innerHTML = html;
       }

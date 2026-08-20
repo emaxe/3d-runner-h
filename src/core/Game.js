@@ -370,6 +370,11 @@ export class Game {
         this.player.model.setGhostMode(true);
         this.ui.showAlert('GHOST PHASE', 'Phasing through obstacles');
         break;
+      case 'overdrive':
+        this.player.overdriveTimer = CONFIG.OVERDRIVE_DURATION;
+        this.player.overdriveShootTimer = 0;
+        this.ui.showAlert('PLASMA OVERDRIVE', 'Rapid Blaster Cannons Active');
+        break;
     }
   }
 
@@ -441,6 +446,37 @@ export class Game {
       this.levelGen.update(this.player.z, this.level);
       this.particles.update(dt);
       this.collision.update(dt);
+
+      // 4c. Overdrive: player projectiles vaporize track obstacles
+      for (let i = this.player.projectiles.length - 1; i >= 0; i--) {
+        const proj = this.player.projectiles[i];
+        const pPos = proj.mesh.position;
+        for (let j = this.levelGen.obstacles.length - 1; j >= 0; j--) {
+          const obs = this.levelGen.obstacles[j];
+          if (obs.destroyed) continue;
+          const h = obs.hitbox;
+          if (
+            pPos.x >= h.minX - 0.25 && pPos.x <= h.maxX + 0.25 &&
+            pPos.y >= h.minY - 0.25 && pPos.y <= h.maxY + 0.25 &&
+            pPos.z >= h.minZ - 0.5 && pPos.z <= h.maxZ + 0.5
+          ) {
+            obs.destroyed = true;
+            if (obs.mesh) obs.mesh.visible = false;
+            h.minY = -999;
+            h.maxY = -999; // исключаем из коллизий без правки CollisionSystem
+
+            this.score += 150 * this.player.combo;
+            this.ui.showAlert('VAPORIZED!', '+150 Score');
+            this.audio.playSound('hit');
+            this.particles.spawn(pPos.x, pPos.y, pPos.z, 15, 0xf97316, 6);
+            this.cameraManager.shake(0.15);
+
+            this.engine.scene.remove(proj.mesh);
+            this.player.projectiles.splice(i, 1);
+            break;
+          }
+        }
+      }
 
       // 4b. Speed lines at high velocity
       if (effectiveSpeed > 24 && Math.random() < 0.3) {

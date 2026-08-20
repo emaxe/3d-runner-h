@@ -38,6 +38,10 @@ export const CONFIG = {
   // Ghost Phase powerup
   GHOST_DURATION: 4.5,
 
+  // Plasma Overdrive powerup
+  OVERDRIVE_DURATION: 6.0,
+  OVERDRIVE_FIRE_RATE: 0.14, // интервал автострельбы в секундах
+
   // World Events
   BOSS_INTERVAL_METERS: 400,
   BIOME_INTERVAL_METERS: 650,
