@@ -3,6 +3,8 @@ import { ShopModal } from './ShopModal.js';
 import { AchievementsModal } from './AchievementsModal.js';
 import { QuestsModal } from './QuestsModal.js';
 import { SettingsModal } from './SettingsModal.js';
+import { StoryModal } from './StoryModal.js';
+import { STORY_PROLOGUE, BIOME_STORY_TOASTS } from '../config/story.js';
 
 /**
  * UIManager - High-level UI orchestrator managing all HUD indicators, screen transitions, and modals.
@@ -16,6 +18,7 @@ export class UIManager {
     this.achievements = new AchievementsModal(game);
     this.quests = new QuestsModal(game);
     this.settings = new SettingsModal(game);
+    this.story = new StoryModal(game);
 
     this.alertTimeout = null;
     this.currentSkinIndex = 0;
@@ -41,7 +44,13 @@ export class UIManager {
   initScreensAndButtons() {
     // Menu buttons
     const btnPlay = document.getElementById('btn-play-game');
-    if (btnPlay) btnPlay.addEventListener('click', () => this.game.startGame());
+    if (btnPlay) btnPlay.addEventListener('click', () => {
+      if (this.game.storage.data.storyPrologueSeen) {
+        this.game.startGame();
+      } else {
+        this.showPrologueOverlay();
+      }
+    });
 
     const btnPause = document.getElementById('btn-pause-game');
     if (btnPause) btnPause.addEventListener('click', () => this.game.pauseGame());
@@ -154,6 +163,11 @@ export class UIManager {
     document.getElementById('btn-done-tutorial')?.addEventListener('click', () => {
       document.getElementById('tutorial-modal')?.classList.add('hidden');
     });
+
+    bindModal('btn-open-story', 'btn-close-story', 'story-modal', () => this.story.render());
+    document.getElementById('btn-done-story')?.addEventListener('click', () => {
+      document.getElementById('story-modal')?.classList.add('hidden');
+    });
   }
 
   updateMenuStats() {
@@ -193,6 +207,33 @@ export class UIManager {
       banner.classList.remove('opacity-100', 'scale-100');
       banner.classList.add('opacity-0', 'scale-90');
     }, 1400);
+  }
+
+  showPrologueOverlay() {
+    const modal = document.getElementById('prologue-modal');
+    const titleEl = document.getElementById('prologue-title');
+    const subtitleEl = document.getElementById('prologue-subtitle');
+    const textEl = document.getElementById('prologue-text');
+    const btnStart = document.getElementById('btn-prologue-start');
+
+    if (titleEl) titleEl.textContent = STORY_PROLOGUE.title;
+    if (subtitleEl) subtitleEl.textContent = STORY_PROLOGUE.subtitle;
+    if (textEl) textEl.innerHTML = STORY_PROLOGUE.transmission.map(line => `<p class="mb-2 last:mb-0">${line}</p>`).join('');
+    if (modal) modal.classList.remove('hidden');
+
+    if (btnStart) {
+      btnStart.onclick = () => {
+        modal?.classList.add('hidden');
+        this.game.storage.data.storyPrologueSeen = true;
+        this.game.storage.save();
+        this.game.startGame();
+      };
+    }
+  }
+
+  showBiomeFlavor(biomeId) {
+    const flavor = BIOME_STORY_TOASTS[biomeId];
+    if (flavor) this.showAlert(flavor.title, flavor.subtitle);
   }
 
   updateHUD(distance, coins, player, boss, level = 1) {

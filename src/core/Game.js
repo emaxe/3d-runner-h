@@ -2,6 +2,7 @@ import { CONFIG, COIN_TYPES } from '../config/gameConfig.js';
 import { BIOMES } from '../config/biomes.js';
 import { SKINS } from '../config/skins.js';
 import { ACHIEVEMENTS } from '../config/achievements.js';
+import { BIOME_STORY_TOASTS } from '../config/story.js';
 
 import { StorageService } from '../services/StorageService.js';
 import { AudioService } from '../services/AudioService.js';
@@ -216,6 +217,10 @@ export class Game {
 
     this.audio.startMusic();
     this.audio.playSound('powerup');
+
+    const firstBiome = BIOMES[0];
+    const firstToast = BIOME_STORY_TOASTS[firstBiome.id];
+    if (firstToast) this.ui.showAlert(firstToast.title, firstToast.subtitle);
   }
 
   /**
@@ -654,7 +659,8 @@ export class Game {
         this.levelGen.setBiome(this.currentBiomeIndex);
         const biome = BIOMES[this.currentBiomeIndex];
         this.engine.setBiomeVisuals(biome);
-        this.ui.showAlert(`ENTERING: ${biome.name.toUpperCase()}`, 'Biome Transition');
+        const storyToast = BIOME_STORY_TOASTS[biome.id];
+        this.ui.showAlert(storyToast ? storyToast.title : `ENTERING: ${biome.name.toUpperCase()}`, storyToast ? storyToast.subtitle : 'Biome Transition');
       }
 
       // 6a. Milestone Rewards (награды за дистанцию)
