@@ -41,5 +41,29 @@ export const QUESTS_CONFIG = [
     unit: 'bosses',
     reward: 200,
     getValue: (saveData) => saveData.bossesDefeated || 0
+  },
+  {
+    id: 5,
+    title: 'Perform 20 Action Dodges',
+    target: 20,
+    unit: 'dodges',
+    reward: 110,
+    getValue: (saveData) => saveData.totalActionDodges || 0
+  },
+  {
+    id: 6,
+    title: 'Perform 10 Near Misses',
+    target: 10,
+    unit: 'dodges',
+    reward: 130,
+    getValue: (saveData) => saveData.totalNearMisses || 0
+  },
+  {
+    id: 7,
+    title: 'Reach 1000 Meters',
+    target: 1000,
+    unit: 'm',
+    reward: 200,
+    getValue: (saveData) => Math.floor(saveData.bestDistance)
   }
 ];

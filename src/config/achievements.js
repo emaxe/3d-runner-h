@@ -105,5 +105,21 @@ export const ACHIEVEMENTS = [
     reward: 500,
     target: 20,
     key: 'totalMilestones'
+  },
+  {
+    id: 'action_dodge_25',
+    name: 'Acrobatic Reflex',
+    desc: 'Perform 25 Action Dodges (close jumps or slides)',
+    reward: 150,
+    target: 25,
+    key: 'totalActionDodges'
+  },
+  {
+    id: 'action_dodge_100',
+    name: 'Matrix Evader',
+    desc: 'Perform 100 Action Dodges',
+    reward: 400,
+    target: 100,
+    key: 'totalActionDodges'
   }
 ];

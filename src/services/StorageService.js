@@ -21,6 +21,7 @@ export class StorageService {
       totalNitroUsed: 0,
       maxComboReached: 1,
       totalNearMisses: 0,
+      totalActionDodges: 0,
       totalMilestones: 0,
       selectedSkin: 'cyber',
       unlockedSkins: ['cyber'],
