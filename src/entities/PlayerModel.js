@@ -350,7 +350,7 @@ export class PlayerModel {
   }
 
   animate(state, time, speedFactor = 1.0) {
-    const runFreq = time * 14 * speedFactor;
+    const runFreq = time * 10 * speedFactor;
 
     // Ghost Phase: пульсирующая прозрачность (быстрее мигает, когда время на исходе)
     if (state.ghostTimer > 0) {
