@@ -201,7 +201,7 @@ export class Game {
       this.ui.showAlert('PERMANENT 2X ACTIVE!', 'Double score during run');
     }
 
-    this.levelGen.initTrack();
+    this.levelGen.initTrack(this.nextBossDistance);
     this.levelGen.setBiome(0);
     this.engine.setBiomeVisuals(BIOMES[0]);
     // Сброс босса при старте забега (защита от Boss Persistence Exploit)
@@ -581,7 +581,7 @@ export class Game {
       // 4. Update Subsystems
       this.player.update(dt, effectiveSpeed);
       this.input.setOnCeiling(this.player.gravityDirection === -1);
-      this.levelGen.update(this.player.z, this.level);
+      this.levelGen.update(this.player.z, this.level, this.nextBossDistance);
       this.particles.update(dt);
       this.collision.update(dt);
 

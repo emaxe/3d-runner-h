@@ -26,6 +26,9 @@ export class LevelGenerator {
     this.ambientCount = 0;
     this.lastUpdateT = 0;
     this.lastPlayerZ = 0;
+    this.nextBossDistance = 0;
+    this.distanceTextureCache = new Map();
+    this.distanceMaterialCache = new Map();
 
     this.initSharedResources();
   }
@@ -94,6 +97,13 @@ export class LevelGenerator {
       decorEmberMat: new THREE.MeshBasicMaterial({ color: 0xf97316, transparent: true, opacity: 0.9 }),
       decorDataCoreMat: new THREE.MeshStandardMaterial({ color: 0xf43f5e, emissive: 0x991b1b, emissiveIntensity: 0.6, flatShading: true }),
       decorHoloOrbMat: new THREE.MeshBasicMaterial({ color: 0x06b6d4, transparent: true, opacity: 0.45, depthWrite: false, blending: THREE.AdditiveBlending }),
+      distPillarBody: new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.4, metalness: 0.5, flatShading: true }),
+      distPillarNeon: new THREE.MeshBasicMaterial({ color: 0x06b6d4 }),
+      distPillarCap: new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.9 }),
+      warnPillarBody: new THREE.MeshStandardMaterial({ color: 0x18181b, roughness: 0.4, metalness: 0.6, flatShading: true }),
+      warnPillarSiren: new THREE.MeshBasicMaterial({ color: 0xf43f5e, transparent: true, opacity: 0.9 }),
+      warnHoloSign: new THREE.MeshBasicMaterial({ color: 0xf43f5e, transparent: true, opacity: 0.5, side: THREE.DoubleSide }),
+      warnStripeMat: new THREE.MeshBasicMaterial({ color: 0xfacc15 }),
       powerups: {
         shield: new THREE.MeshBasicMaterial({ color: 0x38bdf8 }),
         magnet: new THREE.MeshBasicMaterial({ color: 0xf43f5e }),
@@ -174,8 +184,20 @@ export class LevelGenerator {
       ember: new THREE.SphereGeometry(0.1, 4, 4),
       dataTerminal: new THREE.DodecahedronGeometry(0.4, 0),
       holoOrb: new THREE.IcosahedronGeometry(0.25, 0),
-      antennaDish: new THREE.ConeGeometry(0.3, 0.2, 5)
+      antennaDish: new THREE.ConeGeometry(0.3, 0.2, 5),
+      distPillarBase: new THREE.CylinderGeometry(0.5, 0.65, 0.4, 6),
+      distPillarShaft: new THREE.BoxGeometry(0.35, 4.2, 0.35),
+      distPillarNeonStrip: new THREE.BoxGeometry(0.08, 3.8, 0.38),
+      distDisplayBoard: new THREE.BoxGeometry(1.6, 0.85, 0.12),
+      distPillarCap: new THREE.OctahedronGeometry(0.3, 0),
+      warnPillarBase: new THREE.BoxGeometry(0.7, 0.35, 0.7),
+      warnPillarShaft: new THREE.CylinderGeometry(0.18, 0.24, 3.6, 6),
+      warnPillarSiren: new THREE.SphereGeometry(0.24, 8, 6),
+      warnHoloSign: new THREE.BoxGeometry(1.3, 0.55, 0.08)
     };
+
+    this.distanceTextureCache = new Map();
+    this.distanceMaterialCache = new Map();
 
     this.geos.coinCore.rotateX(Math.PI / 2);
     this.geos.diamondCore.rotateX(Math.PI / 2);
@@ -340,7 +362,7 @@ export class LevelGenerator {
     posAttr.needsUpdate = true;
   }
 
-  createChunk(chunkZIndex, level = 1) {
+  createChunk(chunkZIndex, level = 1, nextBossDistance = this.nextBossDistance) {
     const chunkGroup = new THREE.Group();
     const zPos = chunkZIndex * CONFIG.CHUNK_LENGTH;
     const chunkCenterZ = zPos + CONFIG.CHUNK_LENGTH * 0.5;
@@ -415,6 +437,21 @@ export class LevelGenerator {
     // 5b. Extended outside-track decor (biome props + far horizon parallax)
     this.populateExtendedDecor(chunkGroup, zPos);
     this.populateDistantScenery(chunkGroup, zPos);
+
+    // 5c. Outside-track Distance Markers & Boss Warning Pillars
+    const chunkStartDistance = chunkZIndex * CONFIG.CHUNK_LENGTH;
+    if (chunkZIndex > 0 && chunkStartDistance % CONFIG.DISTANCE_MARKER_INTERVAL === 0) {
+      this.spawnDistanceMarker(chunkGroup, zPos, chunkStartDistance, chunkZIndex);
+    }
+
+    const bossDist = nextBossDistance !== undefined ? nextBossDistance : this.nextBossDistance;
+    if (bossDist > 0) {
+      const warningStart = bossDist - CONFIG.BOSS_WARNING_WINDOW_METERS;
+      const warningEnd = bossDist - CONFIG.BOSS_WARNING_AHEAD_MIN;
+      if (zPos + CONFIG.CHUNK_LENGTH > warningStart && zPos < warningEnd) {
+        this.spawnBossWarningPillars(chunkGroup, zPos, warningStart, warningEnd);
+      }
+    }
 
     // 6. Populate Gameplay Obstacles & Pickups
     if (chunkZIndex >= 2) {
@@ -790,6 +827,135 @@ export class LevelGenerator {
       holo.add(ring);
       holo.position.set(side * (railX + 6 + Math.random() * 3), 0, zPos + 10 + Math.random() * 30);
       chunkGroup.add(holo);
+    }
+  }
+
+  /**
+   * Distance Marker CanvasTexture material cache (creates texture on demand once per milestone).
+   */
+  getDistanceMarkerMaterial(distanceMeters) {
+    if (this.distanceMaterialCache.has(distanceMeters)) {
+      return this.distanceMaterialCache.get(distanceMeters);
+    }
+
+    if (typeof document !== 'undefined') {
+      const canvas = document.createElement('canvas');
+      canvas.width = 256;
+      canvas.height = 128;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.fillStyle = '#090d16';
+        ctx.fillRect(0, 0, 256, 128);
+
+        ctx.strokeStyle = '#06b6d4';
+        ctx.lineWidth = 6;
+        ctx.strokeRect(4, 4, 248, 120);
+
+        ctx.fillStyle = '#38bdf8';
+        ctx.font = 'bold 24px monospace, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('DISTANCE', 128, 36);
+
+        ctx.shadowColor = '#06b6d4';
+        ctx.shadowBlur = 12;
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '900 48px monospace, sans-serif';
+        ctx.fillText(`${distanceMeters}M`, 128, 82);
+      }
+
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.minFilter = THREE.LinearFilter;
+      const mat = new THREE.MeshBasicMaterial({ map: texture, transparent: true, opacity: 0.95 });
+
+      this.distanceTextureCache.set(distanceMeters, texture);
+      this.distanceMaterialCache.set(distanceMeters, mat);
+      return mat;
+    }
+
+    const fallbackMat = new THREE.MeshBasicMaterial({ color: 0x06b6d4, transparent: true, opacity: 0.95 });
+    this.distanceMaterialCache.set(distanceMeters, fallbackMat);
+    return fallbackMat;
+  }
+
+  /**
+   * Spawns a tall sci-fi distance marker pillar outside the track (|X| = 5.3 > railX=4.7).
+   * Not added to this.obstacles to prevent collision checks.
+   */
+  spawnDistanceMarker(chunkGroup, zPos, distanceMeters, chunkZIndex) {
+    const cIdx = chunkZIndex !== undefined ? chunkZIndex : Math.round(distanceMeters / CONFIG.CHUNK_LENGTH);
+    const sideIndex = Math.floor(cIdx / 5);
+    const sideX = (sideIndex % 2 === 0) ? -CONFIG.DISTANCE_MARKER_OFFSET_X : CONFIG.DISTANCE_MARKER_OFFSET_X;
+
+    const markerGroup = new THREE.Group();
+    markerGroup.position.set(sideX, 0, zPos + CONFIG.CHUNK_LENGTH * 0.5);
+
+    const base = new THREE.Mesh(this.geos.distPillarBase, this.materials.distPillarBody);
+    base.position.set(0, 0.2, 0);
+
+    const shaft = new THREE.Mesh(this.geos.distPillarShaft, this.materials.distPillarBody);
+    shaft.position.set(0, 2.1, 0);
+
+    const neonStrip = new THREE.Mesh(this.geos.distPillarNeonStrip, this.materials.distPillarNeon);
+    neonStrip.position.set(0, 2.1, 0);
+
+    const displayMat = this.getDistanceMarkerMaterial(distanceMeters);
+    const board = new THREE.Mesh(this.geos.distDisplayBoard, displayMat);
+    board.position.set(0, 3.2, 0);
+
+    const cap = new THREE.Mesh(this.geos.distPillarCap, this.materials.distPillarCap);
+    cap.position.set(0, 4.4, 0);
+    cap.userData.animate = 'distanceBeaconSpin';
+
+    markerGroup.add(base);
+    markerGroup.add(shaft);
+    markerGroup.add(neonStrip);
+    markerGroup.add(board);
+    markerGroup.add(cap);
+
+    chunkGroup.add(markerGroup);
+  }
+
+  /**
+   * Spawns red warning pillars with flashing sirens and holographic hazard signs
+   * on both sides of the track ahead of an approaching boss encounter.
+   */
+  spawnBossWarningPillars(chunkGroup, zPos, warningStart, warningEnd) {
+    const offsets = [12.5, 37.5];
+    const sides = [-CONFIG.BOSS_WARNING_OFFSET_X, CONFIG.BOSS_WARNING_OFFSET_X];
+
+    for (let i = 0; i < offsets.length; i++) {
+      const pillarZ = zPos + offsets[i];
+      if (pillarZ >= warningStart && pillarZ <= warningEnd) {
+        for (let s = 0; s < sides.length; s++) {
+          const sideX = sides[s];
+          const warnGroup = new THREE.Group();
+          warnGroup.position.set(sideX, 0, pillarZ);
+
+          const base = new THREE.Mesh(this.geos.warnPillarBase, this.materials.warnPillarBody);
+          base.position.set(0, 0.175, 0);
+
+          const shaft = new THREE.Mesh(this.geos.warnPillarShaft, this.materials.warnPillarBody);
+          shaft.position.set(0, 1.975, 0);
+
+          const siren = new THREE.Mesh(this.geos.warnPillarSiren, this.materials.warnPillarSiren);
+          siren.position.set(0, 3.9, 0);
+          siren.userData.animate = 'bossWarningFlash';
+          siren.userData.phase = s === 0 ? 0 : Math.PI;
+
+          const holo = new THREE.Mesh(this.geos.warnHoloSign, this.materials.warnHoloSign);
+          holo.position.set(0, 2.5, 0);
+          holo.userData.animate = 'bossWarningFlash';
+          holo.userData.phase = siren.userData.phase;
+
+          warnGroup.add(base);
+          warnGroup.add(shaft);
+          warnGroup.add(siren);
+          warnGroup.add(holo);
+
+          chunkGroup.add(warnGroup);
+        }
+      }
     }
   }
 
@@ -1255,7 +1421,8 @@ export class LevelGenerator {
     return group;
   }
 
-  initTrack() {
+  initTrack(nextBossDistance = 0) {
+    this.nextBossDistance = nextBossDistance;
     for (const c of this.activeChunks) {
       this.scene.remove(c.group);
     }
@@ -1266,7 +1433,7 @@ export class LevelGenerator {
     this.currentChunkIndex = 0;
 
     for (let i = 0; i < CONFIG.MAX_ACTIVE_CHUNKS; i++) {
-      const chunk = this.createChunk(i);
+      const chunk = this.createChunk(i, 1, this.nextBossDistance);
       this.activeChunks.push(chunk);
       this.currentChunkIndex++;
     }
@@ -1274,7 +1441,10 @@ export class LevelGenerator {
     this.initAtmosphericParticles(0);
   }
 
-  update(playerZ, level = 1) {
+  update(playerZ, level = 1, nextBossDistance = this.nextBossDistance) {
+    if (nextBossDistance !== undefined) {
+      this.nextBossDistance = nextBossDistance;
+    }
     this.lastPlayerZ = playerZ;
     const now = performance.now();
     const dt = this.lastUpdateT ? Math.min(Math.max((now - this.lastUpdateT) / 1000, 0), 0.1) : 0.016;
@@ -1286,7 +1456,7 @@ export class LevelGenerator {
         this.scene.remove(firstChunk.group);
         this.activeChunks.shift();
 
-        const newChunk = this.createChunk(this.currentChunkIndex, level);
+        const newChunk = this.createChunk(this.currentChunkIndex, level, this.nextBossDistance);
         this.activeChunks.push(newChunk);
         this.currentChunkIndex++;
 
@@ -1405,6 +1575,12 @@ export class LevelGenerator {
       obj.scale.setScalar(0.85 + Math.sin(time * 3.0 + phase) * 0.2);
     } else if (tag === 'holoRingRotate') {
       obj.rotation.z = time * 0.4;
+    } else if (tag === 'bossWarningFlash') {
+      if (obj.material) {
+        obj.material.opacity = 0.3 + Math.abs(Math.sin(time * 12.0 + phase)) * 0.7;
+      }
+    } else if (tag === 'distanceBeaconSpin') {
+      obj.rotation.y += dt * 2.0;
     }
   }
 }

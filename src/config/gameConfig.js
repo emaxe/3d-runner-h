@@ -83,7 +83,15 @@ export const CONFIG = {
   MILESTONE_SMALL_SCORE: 500,
   MILESTONE_MAJOR_COINS: 100,
   MILESTONE_MAJOR_SCORE: 2000,
-  MILESTONE_MAJOR_SHAKE: 0.25
+  MILESTONE_MAJOR_SHAKE: 0.25,
+
+  // Side Track Pillars & World Markers (столбы-маркеры дистанции и предупреждения о боссе)
+  DISTANCE_MARKER_INTERVAL: 250,        // метров между столбами-маркерами дистанции (каждые ~5 чанков по 50м)
+  DISTANCE_MARKER_OFFSET_X: 5.3,        // отступ от центра трассы по X (|X| > railX=4.7 — вне зоны бега)
+  BOSS_WARNING_WINDOW_METERS: 150,      // за сколько метров до босса появляются столбы-предупреждения
+  BOSS_WARNING_AHEAD_MIN: 100,          // мин. дистанция до босса, на которой ещё стоят предупреждающие столбы
+  BOSS_WARNING_PILLAR_INTERVAL: 25,     // интервал между парами предупреждающих столбов
+  BOSS_WARNING_OFFSET_X: 5.4            // отступ предупреждающих столбов по X (вне зоны бега)
 };
 
 export const COIN_TYPES = {
