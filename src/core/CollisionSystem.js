@@ -18,6 +18,10 @@ export class CollisionSystem {
     // 1. Check Obstacle collisions
     for (let i = 0; i < levelGen.obstacles.length; i++) {
       const obs = levelGen.obstacles[i];
+      // Пропускаем уничтоженные препятствия (SMASHED/overdrive/щит) — иначе
+      // динамический дрон перезаписывает hitbox.minY/maxY обратно в реальные
+      // координаты, «воскрешая» хитбокс невидимого уничтоженного дрона.
+      if (obs.destroyed) continue;
 
       // Dynamic sine hover drone
       if (obs.type === 'drone') {

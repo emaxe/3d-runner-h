@@ -142,6 +142,9 @@ export class Game {
     this.player.model.group.position.set(0, 0.9, 0);
     this.cameraManager.setupMenu();
     this.ui.updateMenuStats();
+    // Сброс босса при выходе в меню (иначе активный босс телепортируется на старт нового забега)
+    this.boss.reset();
+    this.audio.bossMusicMode = false;
     // Ежедневная ротация квестов при возврате в меню
     this.storage.checkDailyQuestsRotation();
   }
@@ -182,6 +185,9 @@ export class Game {
     this.levelGen.initTrack();
     this.levelGen.setBiome(0);
     this.engine.setBiomeVisuals(BIOMES[0]);
+    // Сброс босса при старте забега (защита от Boss Persistence Exploit)
+    this.boss.reset();
+    this.audio.bossMusicMode = false;
 
     // UI screen switches
     document.getElementById('menu-screen')?.classList.add('hidden');
@@ -254,27 +260,44 @@ export class Game {
   }
 
   onPlayerHitObstacle(obs) {
-    if (obs) obs.wasHit = true;
     // Ghost Phase: игрок фазирует сквозь препятствия — без урона, без траты щита,
     // без разрушения препятствия и без очков SMASHED. Проверка стоит ПЕРВОЙ.
     if (this.player.ghostTimer > 0) {
       return;
     }
+    if (obs) obs.wasHit = true;
 
     if (this.player.invulnerableTimer > 0 || this.player.isNitroActive) {
-      // Smashed obstacle
-      this.score += 150 * this.player.combo;
-      this.ui.showAlert('SMASHED!', 'Obstacle Destroyed');
-      this.audio.playSound('hit');
-      this.cameraManager.shake(0.25);
-      if (obs && obs.mesh) {
+      // Smashed obstacle — уничтожаем препятствие и деактивируем его хитбокс,
+      // чтобы не начислять очки каждый кадр перекрытия (эксплойт бесконечных очков).
+      if (obs) {
+        obs.destroyed = true;
+        if (obs.mesh) obs.mesh.visible = false;
+        if (obs.hitbox) {
+          obs.hitbox.minY = -999;
+          obs.hitbox.maxY = -999;
+        }
+        this.score += 150 * this.player.combo;
+        this.ui.showAlert('SMASHED!', 'Obstacle Destroyed');
+        this.audio.playSound('hit');
+        this.cameraManager.shake(0.25);
         this.particles.spawn(obs.mesh.position.x, obs.mesh.position.y, obs.mesh.position.z, 15, 0xf59e0b, 6);
       }
+      // Если obs отсутствует (снаряд босса) — просто поглощаем урон без очков SMASHED.
       return;
     }
 
     if (this.player.hasShield) {
-      // Shield Absorbed Hit
+      // Shield Absorbed Hit — уничтожаем препятствие, чтобы то же самое препятствие
+      // не начислило SMASHED-очки на следующем кадре (после установки invulnerableTimer).
+      if (obs) {
+        obs.destroyed = true;
+        if (obs.mesh) obs.mesh.visible = false;
+        if (obs.hitbox) {
+          obs.hitbox.minY = -999;
+          obs.hitbox.maxY = -999;
+        }
+      }
       this.player.hasShield = false;
       this.player.invulnerableTimer = 1.0;
       this.audio.playSound('hit');

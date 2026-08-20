@@ -152,6 +152,32 @@ export class MiniBoss {
     this.group.add(this.muzzleR);
   }
 
+  /**
+   * Полный сброс босса при рестарте/выходе в меню. Без этого, если игрок погиб
+   * во время боя, босс остаётся активным и мгновенно телепортируется на старт
+   * нового забега (Boss Persistence Exploit).
+   */
+  reset() {
+    this.active = false;
+    this.dying = false;
+    this.hp = this.maxHp;
+    this.time = 0;
+    this.attackTimer = 0;
+    this.deathTimer = 0;
+    this.chargeFlash = 0;
+    this.eyeFlashTimer = 0;
+    this.group.visible = false;
+    this.group.scale.set(1, 1, 1);
+    this.group.rotation.set(0, 0, 0);
+
+    // Удаляем все снаряды босса со сцены
+    for (const p of this.bossProjectiles) {
+      this.scene.remove(p.mesh);
+    }
+    this.bossProjectiles = [];
+    this.spiralQueue = [];
+  }
+
   spawn(playerZ, biomeIndex = 0, level = 1) {
     this.active = true;
     this.dying = false;
