@@ -64,5 +64,14 @@ export const CONFIG = {
   LEVEL_BOSS_ATTACK_BONUS: 0.08, // прибавка к скорости атак босса за уровень
 
   // Object Pooling
-  PARTICLE_POOL_SIZE: 160
+  PARTICLE_POOL_SIZE: 160,
+
+  // Milestone Rewards (награды за дистанцию)
+  MILESTONE_INTERVAL: 500,        // каждые 500м — малый бонус
+  MILESTONE_MAJOR_INTERVAL: 1000, // каждые 1000м — крупный бонус
+  MILESTONE_SMALL_COINS: 25,
+  MILESTONE_SMALL_SCORE: 500,
+  MILESTONE_MAJOR_COINS: 100,
+  MILESTONE_MAJOR_SCORE: 2000,
+  MILESTONE_MAJOR_SHAKE: 0.25
 };

@@ -50,6 +50,7 @@ export class Game {
     this.coinsGathered = 0;
     this.nextBossDistance = CONFIG.BOSS_INTERVAL_METERS;
     this.nextBiomeDistance = CONFIG.BIOME_INTERVAL_METERS;
+    this.nextMilestoneDistance = CONFIG.MILESTONE_INTERVAL;
     this.currentBiomeIndex = 0;
     this.level = 1; // текущий уровень (растёт после каждого босса)
 
@@ -153,6 +154,7 @@ export class Game {
     this.coinsGathered = 0;
     this.nextBossDistance = CONFIG.BOSS_INTERVAL_METERS;
     this.nextBiomeDistance = CONFIG.BIOME_INTERVAL_METERS;
+    this.nextMilestoneDistance = CONFIG.MILESTONE_INTERVAL;
     this.currentBiomeIndex = 0;
     this.level = 1;
     const hasStartShield = (this.storage.data.upgrades.shield_start || 0) > 0;
@@ -553,7 +555,25 @@ export class Game {
         this.ui.showAlert(`ENTERING: ${biome.name.toUpperCase()}`, 'Biome Transition');
       }
 
-      // 6. Mini-Boss Encounter Spawning & Combat
+      // 6a. Milestone Rewards (награды за дистанцию)
+      if (this.distance >= this.nextMilestoneDistance) {
+        const isMajor = this.nextMilestoneDistance % CONFIG.MILESTONE_MAJOR_INTERVAL === 0;
+        const coins = isMajor ? CONFIG.MILESTONE_MAJOR_COINS : CONFIG.MILESTONE_SMALL_COINS;
+        const scoreBonus = isMajor ? CONFIG.MILESTONE_MAJOR_SCORE : CONFIG.MILESTONE_SMALL_SCORE;
+        this.coinsGathered += coins;
+        this.score += scoreBonus * this.player.combo;
+        this.storage.data.totalMilestones = (this.storage.data.totalMilestones || 0) + 1;
+        this.ui.showAlert(
+          isMajor ? 'MILESTONE!' : `${Math.floor(this.nextMilestoneDistance)}m!`,
+          `+${coins} Coins & +${scoreBonus} Score`
+        );
+        this.audio.playSound(isMajor ? 'powerup' : 'coin');
+        this.particles.spawn(this.player.x, this.player.y + 0.9, this.player.z, 10, isMajor ? 0xffe600 : 0x38bdf8, 4);
+        if (isMajor) this.cameraManager.shake(CONFIG.MILESTONE_MAJOR_SHAKE);
+        this.nextMilestoneDistance += CONFIG.MILESTONE_INTERVAL;
+      }
+
+      // 7. Mini-Boss Encounter Spawning & Combat
       if (this.distance >= this.nextBossDistance && !this.boss.active) {
         this.boss.spawn(this.player.z, this.currentBiomeIndex, this.level);
         this.nextBossDistance += CONFIG.BOSS_INTERVAL_METERS;
@@ -594,7 +614,7 @@ export class Game {
         }
       }
 
-      // 7. Dynamic Camera
+      // 8. Dynamic Camera
       this.cameraManager.update(dt, this.player, this.player.isNitroActive);
 
       // FPS Watchdog for adaptive resolution
@@ -634,7 +654,7 @@ export class Game {
         }
       }
 
-      // 8. Update HUD (throttled ~20Hz / 0.05s)
+      // 9. Update HUD (throttled ~20Hz / 0.05s)
       this.hudTimer += dt;
       if (this.hudTimer >= 0.05) {
         this.hudTimer = 0;

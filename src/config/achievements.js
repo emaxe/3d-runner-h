@@ -89,5 +89,21 @@ export const ACHIEVEMENTS = [
     reward: 200,
     target: 50,
     key: 'totalNearMisses'
+  },
+  {
+    id: 'milestone_5',
+    name: 'Waypoint Pioneer',
+    desc: 'Reach 5 milestone checkpoints',
+    reward: 150,
+    target: 5,
+    key: 'totalMilestones'
+  },
+  {
+    id: 'milestone_20',
+    name: 'Checkpoint Conqueror',
+    desc: 'Reach 20 milestone checkpoints',
+    reward: 500,
+    target: 20,
+    key: 'totalMilestones'
   }
 ];
