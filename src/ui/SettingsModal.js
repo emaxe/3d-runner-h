@@ -173,6 +173,66 @@ export class SettingsModal {
       });
     }
 
+    // Accessibility: Camera Shake toggle
+    const shakeToggle = document.getElementById('toggle-camera-shake');
+    if (shakeToggle) {
+      shakeToggle.checked = this.game.storage.data.settings.shakeEnabled !== false;
+      shakeToggle.addEventListener('change', (e) => {
+        const val = e.target.checked;
+        this.game.storage.data.settings.shakeEnabled = val;
+        this.game.cameraManager.enabled = val;
+        this.game.storage.save();
+      });
+    }
+
+    // Accessibility: Particle Density buttons
+    const particleButtons = {
+      low: document.getElementById('gfx-particles-low'),
+      normal: document.getElementById('gfx-particles-normal'),
+      high: document.getElementById('gfx-particles-high')
+    };
+
+    const updateParticleBtnState = (selected) => {
+      Object.keys(particleButtons).forEach((key) => {
+        const btn = particleButtons[key];
+        if (!btn) return;
+        if (key === selected) {
+          btn.className =
+            'py-2 rounded-xl glass-panel text-xs font-bold border-cyan-400 text-cyan-300 transition cursor-pointer';
+        } else {
+          btn.className =
+            'py-2 rounded-xl glass-panel text-xs font-bold text-slate-400 hover:border-slate-400 transition cursor-pointer';
+        }
+      });
+    };
+
+    const currentDensity = this.game.storage.data.settings.particleDensity || 'normal';
+    updateParticleBtnState(currentDensity);
+
+    Object.keys(particleButtons).forEach((key) => {
+      const btn = particleButtons[key];
+      if (btn) {
+        btn.addEventListener('click', () => {
+          this.game.storage.data.settings.particleDensity = key;
+          this.game.particles.setDensity(key);
+          this.game.storage.save();
+          updateParticleBtnState(key);
+        });
+      }
+    });
+
+    // Accessibility: Large Text toggle
+    const largeTextToggle = document.getElementById('toggle-large-text');
+    if (largeTextToggle) {
+      largeTextToggle.checked = !!this.game.storage.data.settings.largeText;
+      largeTextToggle.addEventListener('change', (e) => {
+        const val = e.target.checked;
+        this.game.storage.data.settings.largeText = val;
+        document.body.classList.toggle('large-text', val);
+        this.game.storage.save();
+      });
+    }
+
     // Reset Save Progress
     const resetBtn = document.getElementById('btn-reset-save');
     if (resetBtn) {

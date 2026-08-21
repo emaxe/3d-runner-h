@@ -124,3 +124,52 @@ body, html {
 .animate-ping-once {
   animation: cutscene-ping-once 1s ease-out infinite;
 }
+
+/* ==================== ACCESSIBILITY: LARGE TEXT MODE ==================== */
+body.large-text {
+  font-size: 18px;
+}
+
+/* Увеличение мелких вспомогательных подписей и плашек */
+body.large-text .text-xs {
+  font-size: 0.875rem !important; /* ~14px вместо 12px */
+}
+
+body.large-text .text-\[10px\],
+body.large-text .text-\[11px\] {
+  font-size: 0.8125rem !important; /* ~13px вместо 10-11px */
+}
+
+body.large-text .text-sm {
+  font-size: 1.0625rem !important; /* ~17px вместо 14px */
+}
+
+/* HUD масштабирование для комфортного считывания на ходу */
+body.large-text #hud-distance,
+body.large-text #hud-coins,
+body.large-text #hud-multiplier,
+body.large-text #hud-level {
+  font-size: 2.25rem !important;
+}
+
+body.large-text #hud-alert-title {
+  font-size: 1.25rem !important;
+}
+
+body.large-text #hud-alert-sub {
+  font-size: 0.875rem !important;
+}
+
+/* Увеличение текста в модальных окнах */
+body.large-text #settings-modal,
+body.large-text #shop-modal,
+body.large-text #achievements-modal,
+body.large-text #quests-modal,
+body.large-text #tutorial-modal,
+body.large-text #gameover-screen {
+  line-height: 1.5;
+}
+
+body.large-text .font-gaming {
+  letter-spacing: 0.07em;
+}

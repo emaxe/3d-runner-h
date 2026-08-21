@@ -147,6 +147,11 @@ export class Game {
       touchOverlay.style.display = s.hideTouchControls ? 'none' : (s.showTouchControls ? 'flex' : 'none');
     }
 
+    // Accessibility settings
+    this.cameraManager.enabled = s.shakeEnabled !== false;
+    this.particles.setDensity(s.particleDensity || 'normal');
+    document.body.classList.toggle('large-text', !!s.largeText);
+
     const skin = SKINS.find((sk) => sk.id === this.storage.data.selectedSkin) || SKINS[0];
     this.player.model.applySkin(skin);
     const skinNameEl = document.getElementById('menu-skin-name');

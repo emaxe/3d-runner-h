@@ -453,6 +453,36 @@
             </div>
           </div>
 
+          <!-- Accessibility -->
+          <div class="pt-2 border-t border-slate-800">
+            <div class="text-xs font-bold text-cyan-400 uppercase tracking-wider mb-2">♿ Accessibility</div>
+
+            <div class="flex justify-between items-center pt-1">
+              <div>
+                <div class="font-bold text-slate-200">Camera Shake</div>
+                <div class="text-xs text-slate-400">Screen shake feedback on hits</div>
+              </div>
+              <input id="toggle-camera-shake" type="checkbox" checked class="w-5 h-5 accent-cyan-400 cursor-pointer">
+            </div>
+
+            <div class="pt-2">
+              <div class="text-xs font-bold text-slate-400 uppercase mb-1">Particle Density</div>
+              <div class="grid grid-cols-3 gap-2">
+                <button id="gfx-particles-low" class="py-2 rounded-xl glass-panel text-xs font-bold hover:border-cyan-400 cursor-pointer">LOW</button>
+                <button id="gfx-particles-normal" class="py-2 rounded-xl glass-panel text-xs font-bold border-cyan-400 text-cyan-300 cursor-pointer">NORMAL</button>
+                <button id="gfx-particles-high" class="py-2 rounded-xl glass-panel text-xs font-bold hover:border-cyan-400 cursor-pointer">HIGH</button>
+              </div>
+            </div>
+
+            <div class="flex justify-between items-center pt-2">
+              <div>
+                <div class="font-bold text-slate-200">Large Text</div>
+                <div class="text-xs text-slate-400">Increase UI font size</div>
+              </div>
+              <input id="toggle-large-text" type="checkbox" class="w-5 h-5 accent-cyan-400 cursor-pointer">
+            </div>
+          </div>
+
           <!-- Detailed Controls Reference -->
           <div id="settings-controls-guide" class="p-3.5 rounded-2xl bg-slate-900/70 border border-slate-800 space-y-2">
             <div class="text-xs font-bold text-cyan-400 uppercase tracking-wider flex items-center gap-1.5">

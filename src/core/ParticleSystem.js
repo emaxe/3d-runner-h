@@ -17,6 +17,9 @@ export class ParticleSystem {
       opacity: 0.9
     });
 
+    // Accessibility: множитель плотности частиц (low=0.5, normal=1.0, high=1.5)
+    this.densityMultiplier = 1.0;
+
     // Pre-allocate particle pool
     for (let i = 0; i < CONFIG.PARTICLE_POOL_SIZE; i++) {
       const p = new THREE.Mesh(this.geo, this.mat.clone());
@@ -35,6 +38,15 @@ export class ParticleSystem {
   }
 
   /**
+   * Установить множитель плотности частиц (доступность).
+   * @param {string} level - 'low' | 'normal' | 'high'
+   */
+  setDensity(level) {
+    const multipliers = { low: 0.5, normal: 1.0, high: 1.5 };
+    this.densityMultiplier = multipliers[level] ?? 1.0;
+  }
+
+  /**
    * Spawn particles.
    * @param {number} x
    * @param {number} y
@@ -48,8 +60,9 @@ export class ParticleSystem {
    * @param {number} gravity - downward acceleration
    */
   spawn(x, y, z, count = 8, color = 0x06b6d4, speed = 4, size = 0.25, life = 0.5, shape = 'box', gravity = 0) {
+    const effectiveCount = count > 0 ? Math.max(1, Math.round(count * this.densityMultiplier)) : 0;
     let spawned = 0;
-    for (let i = 0; i < this.particles.length && spawned < count; i++) {
+    for (let i = 0; i < this.particles.length && spawned < effectiveCount; i++) {
       const p = this.particles[i];
       if (!p.active) {
         p.active = true;

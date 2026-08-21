@@ -14,9 +14,11 @@ export class CameraManager {
     // Shake
     this.shakeIntensity = 0;
     this.shakeDecay = 6;
+    this.enabled = true; // Accessibility: тряска камеры вкл/выкл
   }
 
   shake(amount = 0.3) {
+    if (!this.enabled) return;
     this.shakeIntensity = Math.min(1.2, this.shakeIntensity + amount);
   }
 

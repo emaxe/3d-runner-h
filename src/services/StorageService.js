@@ -47,7 +47,10 @@ export class StorageService {
         quality: 'high', // 'low', 'med', 'high'
         showTouchControls: true,
         hideTouchControls: false,
-        controlMode: 'swipe' // 'swipe' | 'gyro'
+        controlMode: 'swipe', // 'swipe' | 'gyro'
+        shakeEnabled: true, // Accessibility: тряска камеры
+        particleDensity: 'normal', // Accessibility: 'low' | 'normal' | 'high'
+        largeText: false // Accessibility: крупный текст
       },
     };
   }
