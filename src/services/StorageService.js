@@ -41,6 +41,16 @@ export class StorageService {
       achievementsNotified: [],
       questDate: '',
       questClaimed: new Array(QUESTS_CONFIG.length).fill(false),
+      // Суточный прогресс квестов: изолирован от lifetime-статистики, обнуляется при смене дня.
+      dailyProgress: {
+        distance: 0,
+        coins: 0,
+        gravityFlips: 0,
+        nitroUsed: 0,
+        bossesDefeated: 0,
+        actionDodges: 0,
+        nearMisses: 0
+      },
       settings: {
         sfxVolume: 80,
         musicVolume: 70,
@@ -81,6 +91,7 @@ export class StorageService {
           ...defaults,
           ...parsed,
           questClaimed,
+          dailyProgress: { ...defaults.dailyProgress, ...(parsed.dailyProgress || {}) },
           achievementsNotified: Array.isArray(parsed.achievementsNotified) ? parsed.achievementsNotified : [],
           upgrades: { ...defaults.upgrades, ...(parsed.upgrades || {}) },
           boosts: { ...defaults.boosts, ...(parsed.boosts || {}) },
@@ -128,6 +139,16 @@ export class StorageService {
       this.data.questDate = today;
       // .map(() => false) — работает с массивом любой длины (добавление квестов не ломает)
       this.data.questClaimed = this.data.questClaimed.map(() => false);
+      // Обнуление суточного прогресса квестов при смене дня
+      this.data.dailyProgress = {
+        distance: 0,
+        coins: 0,
+        gravityFlips: 0,
+        nitroUsed: 0,
+        bossesDefeated: 0,
+        actionDodges: 0,
+        nearMisses: 0
+      };
       this.save();
       return true;
     }

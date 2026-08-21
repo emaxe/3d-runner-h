@@ -8,7 +8,7 @@ export const QUESTS_CONFIG = [
     target: 600,
     unit: 'm',
     reward: 120,
-    getValue: (saveData) => Math.floor(saveData.bestDistance)
+    getValue: (saveData) => Math.floor(saveData.dailyProgress.distance || 0)
   },
   {
     id: 1,
@@ -16,7 +16,7 @@ export const QUESTS_CONFIG = [
     target: 80,
     unit: '$',
     reward: 150,
-    getValue: (saveData) => saveData.totalCoins
+    getValue: (saveData) => saveData.dailyProgress.coins || 0
   },
   {
     id: 2,
@@ -24,7 +24,7 @@ export const QUESTS_CONFIG = [
     target: 15,
     unit: 'flips',
     reward: 100,
-    getValue: (saveData) => saveData.totalGravityFlips
+    getValue: (saveData) => saveData.dailyProgress.gravityFlips || 0
   },
   {
     id: 3,
@@ -32,7 +32,7 @@ export const QUESTS_CONFIG = [
     target: 5,
     unit: 'boosts',
     reward: 130,
-    getValue: (saveData) => saveData.totalNitroUsed || 0
+    getValue: (saveData) => saveData.dailyProgress.nitroUsed || 0
   },
   {
     id: 4,
@@ -40,7 +40,7 @@ export const QUESTS_CONFIG = [
     target: 1,
     unit: 'bosses',
     reward: 200,
-    getValue: (saveData) => saveData.bossesDefeated || 0
+    getValue: (saveData) => saveData.dailyProgress.bossesDefeated || 0
   },
   {
     id: 5,
@@ -48,7 +48,7 @@ export const QUESTS_CONFIG = [
     target: 20,
     unit: 'dodges',
     reward: 110,
-    getValue: (saveData) => saveData.totalActionDodges || 0
+    getValue: (saveData) => saveData.dailyProgress.actionDodges || 0
   },
   {
     id: 6,
@@ -56,7 +56,7 @@ export const QUESTS_CONFIG = [
     target: 10,
     unit: 'dodges',
     reward: 130,
-    getValue: (saveData) => saveData.totalNearMisses || 0
+    getValue: (saveData) => saveData.dailyProgress.nearMisses || 0
   },
   {
     id: 7,
@@ -64,6 +64,6 @@ export const QUESTS_CONFIG = [
     target: 1000,
     unit: 'm',
     reward: 200,
-    getValue: (saveData) => Math.floor(saveData.bestDistance)
+    getValue: (saveData) => Math.floor(saveData.dailyProgress.distance || 0)
   }
 ];

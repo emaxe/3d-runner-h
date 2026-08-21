@@ -40,7 +40,7 @@ export class QuestsModal {
               ? `<span class="px-3 py-1.5 rounded-xl bg-slate-800 text-slate-500 font-bold text-xs">CLAIMED</span>`
               : canClaim
               ? `<button class="btn-claim-quest px-4 py-2 rounded-xl bg-emerald-500 text-slate-950 font-gaming text-base font-black hover:bg-emerald-400 animate-pulse active:scale-95" data-id="${q.id}" data-reward="${q.reward}">CLAIM</button>`
-              : `<span class="text-xs text-slate-500 font-bold">${cur}/${q.target}</span>`
+              : `<span class="text-xs text-slate-500 font-bold">${Math.min(cur, q.target)}/${q.target}</span>`
           }
         </div>
       `;

@@ -110,6 +110,7 @@ export class Game {
         if (this.state === 'PLAYING') {
           this.player.flipGravity();
           this.storage.data.totalGravityFlips++;
+          this.storage.data.dailyProgress.gravityFlips++;
         }
       },
       onNitro: () => {
@@ -117,6 +118,7 @@ export class Game {
           if (this.player.nitroEnergy >= CONFIG.NITRO_ENERGY_REQ) {
             this.player.activateNitro();
             this.storage.data.totalNitroUsed++;
+            this.storage.data.dailyProgress.nitroUsed++;
           }
         }
       },
@@ -345,6 +347,9 @@ export class Game {
     this.storage.data.runsCompleted++;
     this.storage.data.totalCoins += this.coinsGathered;
     this.storage.data.coins += this.coinsGathered;
+    // Суточный прогресс квестов: дистанция и монеты за забег
+    this.storage.data.dailyProgress.distance += Math.floor(this.distance);
+    this.storage.data.dailyProgress.coins += Math.floor(this.coinsGathered);
     this.isNewRecord = this.storage.updateBestDistance(this.distance);
     this.checkAchievements();
 
@@ -569,6 +574,7 @@ export class Game {
 
     // Статистика (поле totalNearMisses уже есть в StorageService)
     this.storage.data.totalNearMisses = (this.storage.data.totalNearMisses || 0) + 1;
+    this.storage.data.dailyProgress.nearMisses++;
     this.runNearMisses++;
 
     // Звук и визуал (эскалация с ростом серии)
@@ -681,6 +687,7 @@ export class Game {
 
     // Статистика (для будущих ачивок/квестов)
     this.storage.data.totalActionDodges = (this.storage.data.totalActionDodges || 0) + 1;
+    this.storage.data.dailyProgress.actionDodges++;
     this.runActionDodges++;
 
     // Звук и визуал (зелёные искры — отличимы от голубых у Near Miss)
@@ -866,6 +873,7 @@ export class Game {
           // Boss Defeated Reward
           this.audio.bossMusicMode = false;
           this.storage.data.bossesDefeated++;
+          this.storage.data.dailyProgress.bossesDefeated++;
           this.runBossesDefeated++;
           this.coinsGathered += 100;
           this.score += 2000 * this.player.combo;
