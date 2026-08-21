@@ -37,6 +37,7 @@ export class Game {
 
     // 3. Game Entities
     this.player = new Player(this.engine.scene, this.particles, this.audio);
+    this.player.onLandingCallback = (info) => this.onPerfectLanding(info);
     this.boss = new MiniBoss(this.engine.scene, this.particles, this.audio);
     this.levelGen = new LevelGenerator(this.engine.scene, this.particles, this.audio);
 
@@ -62,6 +63,7 @@ export class Game {
     this.runBossesDefeated = 0;
     this.runMaxCombo = 1;
     this.runMaxNearMissStreak = 0;
+    this.runPerfectLandings = 0;
     this.isNewRecord = false;
     this._deathCutsceneTimer = null;
 
@@ -194,6 +196,7 @@ export class Game {
     this.runBossesDefeated = 0;
     this.runMaxCombo = 1;
     this.runMaxNearMissStreak = 0;
+    this.runPerfectLandings = 0;
     this.isNewRecord = false;
     const hasStartShield = (this.storage.data.upgrades.shield_start || 0) > 0;
     this.player.reset(hasStartShield);
@@ -367,6 +370,7 @@ export class Game {
             bossesDefeated: this.runBossesDefeated,
             maxCombo: this.runMaxCombo,
             maxNearMissStreak: this.runMaxNearMissStreak,
+            perfectLandings: this.runPerfectLandings,
             level: this.level
           });
         }
@@ -568,6 +572,48 @@ export class Game {
     const sparkCount = streakMult >= 10 ? 24 : streakMult >= 5 ? 16 : streakMult >= 2 ? 12 : 8;
     this.particles.spawn(this.player.x, this.player.y, this.player.z, sparkCount, sparkColor, 2.5, 0.1, 0.3, 'spark', 1);
     this.cameraManager.shake(0.12 + Math.min(0.28, this.player.nearMissStreak * 0.03));
+
+    // Проверка ачивок
+    this.checkAchievements();
+  }
+
+  /**
+   * Perfect Landing: награда за мягкое/контролируемое приземление на пол/потолок
+   * после флипа гравитации или прыжка (низкая |vy| в момент касания).
+   */
+  onPerfectLanding(info) {
+    if (this.state !== 'PLAYING' || this.player.isDead) return;
+
+    const multiplier = this.player.multiplierTimer > 0 ? 2 : 1;
+    const scoreGain = CONFIG.PERFECT_LANDING_SCORE * this.player.combo * multiplier;
+    this.score += scoreGain;
+
+    // Буст комбо-стрика (приближает к следующему xN)
+    this.player.comboScoreStreak = Math.min(9, this.player.comboScoreStreak + CONFIG.PERFECT_LANDING_COMBO_BONUS);
+    if (this.player.comboScoreStreak >= 10 && this.player.combo < 10) {
+      this.player.combo++;
+      this.player.comboScoreStreak = 0;
+      if (this.player.combo > this.runMaxCombo) this.runMaxCombo = this.player.combo;
+      if (this.player.combo > this.storage.data.maxComboReached) {
+        this.storage.data.maxComboReached = this.player.combo;
+        this.storage.save();
+      }
+      this.ui.showAlert(`COMBO x${this.player.combo}!`, 'Multiplier Boost');
+    }
+
+    // Энергия Nitro (стимулирует поддержание скорости)
+    this.player.nitroEnergy = Math.min(CONFIG.NITRO_MAX_ENERGY, this.player.nitroEnergy + CONFIG.PERFECT_LANDING_NITRO_BONUS);
+
+    // Статистика
+    this.storage.data.totalPerfectLandings = (this.storage.data.totalPerfectLandings || 0) + 1;
+    this.runPerfectLandings++;
+
+    // Звук и визуальный джуис
+    this.audio.playSound('perfect_landing');
+    const surfaceY = info.surfaceY !== undefined ? info.surfaceY : this.player.y;
+    this.particles.spawn(this.player.x, surfaceY, this.player.z, 14, 0x00f0ff, 3.0, 0.12, 0.35, 'spark', 2);
+    this.cameraManager.shake(CONFIG.PERFECT_LANDING_SHAKE);
+    this.ui.showAlert('PERFECT LANDING!', `+${scoreGain} Score & Nitro Boost`);
 
     // Проверка ачивок
     this.checkAchievements();

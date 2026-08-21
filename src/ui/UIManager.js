@@ -420,6 +420,7 @@ export class UIManager {
     const bossesEl = document.getElementById('gameover-bosses');
     const milestonesEl = document.getElementById('gameover-milestones');
     const levelEl = document.getElementById('gameover-level');
+    const perfectLandingsEl = document.getElementById('gameover-perfect-landings');
 
     if (nmEl) nmEl.textContent = s.nearMisses;
     if (adEl) adEl.textContent = s.actionDodges;
@@ -428,6 +429,7 @@ export class UIManager {
     if (bossesEl) bossesEl.textContent = s.bossesDefeated;
     if (milestonesEl) milestonesEl.textContent = s.milestones;
     if (levelEl) levelEl.textContent = `LEVEL ${s.level}`;
+    if (perfectLandingsEl) perfectLandingsEl.textContent = s.perfectLandings || 0;
 
     this.updateMenuStats();
   }

@@ -51,6 +51,11 @@ export class Player {
     this.comboScoreStreak = 0;
     this.nearMissStreak = 0; // серия подряд идущих near-miss (эскалация награды)
 
+    // Perfect Landing System
+    this.airTimer = 0;              // накопитель времени в воздухе
+    this.perfectLandingCooldown = 0; // кулдаун между срабатываниями
+    this.onLandingCallback = null;   // колбэк приземления (устанавливает Game)
+
     // Death Ragdoll Physics
     this.deathTimer = 0;
     this.deathVx = 0;
@@ -111,6 +116,10 @@ export class Player {
     this.deathRotSpeedX = 0;
     this.deathRotSpeedY = 0;
     this.deathRotSpeedZ = 0;
+
+    // Perfect Landing System reset
+    this.airTimer = 0;
+    this.perfectLandingCooldown = 0;
 
     this.combo = 1;
     this.comboScoreStreak = 0;
@@ -301,6 +310,14 @@ export class Player {
     this.vy -= currentGravity * dt;
     this.y += this.vy * dt;
 
+    // Perfect Landing: накапливаем время в воздухе и тикаем кулдаун
+    if (!this.isGrounded) {
+      this.airTimer += dt;
+    }
+    if (this.perfectLandingCooldown > 0) {
+      this.perfectLandingCooldown -= dt;
+    }
+
     // 4. Floor & Ceiling Boundaries
     const floorStandY = 0.9;
     const ceilingStandY = CONFIG.CEILING_HEIGHT - 0.9;
@@ -309,6 +326,7 @@ export class Player {
 
     if (this.gravityDirection === 1) {
       if (this.y <= floorStandY) {
+        this._checkPerfectLanding(this.vy, 0.9);
         this.y = floorStandY;
         this.vy = 0;
         this.isGrounded = true;
@@ -321,6 +339,7 @@ export class Player {
       }
     } else {
       if (this.y >= ceilingStandY) {
+        this._checkPerfectLanding(this.vy, CONFIG.CEILING_HEIGHT - 0.9);
         this.y = ceilingStandY;
         this.vy = 0;
         this.isGrounded = true;
@@ -512,6 +531,32 @@ export class Player {
         this.scene.remove(p.mesh);
         this.projectiles.splice(i, 1);
       }
+    }
+  }
+
+  /**
+   * Perfect Landing: детекция мягкого/контролируемого приземления на пол/потолок.
+   * Вызывается в момент касания поверхности, ДО сброса vy=0, чтобы замерить реальную
+   * скорость удара. Награда — только за активный тайминг (низкая |vy|), не за спам.
+   */
+  _checkPerfectLanding(impactVy, surfaceY) {
+    // Сброс накопителя времени в воздухе при каждом касании
+    const wasAirborne = this.airTimer > 0;
+    this.airTimer = 0;
+
+    if (!wasAirborne) return; // не был в воздухе — не приземление
+    if (this.perfectLandingCooldown > 0) return; // кулдаун
+    if (Math.abs(impactVy) > CONFIG.PERFECT_LANDING_MAX_VY) return; // жёсткий удар
+    if (this.onLandingCallback) {
+      this.perfectLandingCooldown = CONFIG.PERFECT_LANDING_COOLDOWN;
+      this.onLandingCallback({
+        impactVy,
+        surfaceY,
+        x: this.x,
+        y: surfaceY,
+        z: this.z,
+        gravityDirection: this.gravityDirection
+      });
     }
   }
 

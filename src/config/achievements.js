@@ -121,5 +121,21 @@ export const ACHIEVEMENTS = [
     reward: 400,
     target: 100,
     key: 'totalActionDodges'
+  },
+  {
+    id: 'perfect_landing_25',
+    name: 'Feather Touch',
+    desc: 'Land 25 Perfect Landings (soft controlled landings)',
+    reward: 150,
+    target: 25,
+    key: 'totalPerfectLandings'
+  },
+  {
+    id: 'perfect_landing_100',
+    name: 'Gravity Master',
+    desc: 'Land 100 Perfect Landings',
+    reward: 400,
+    target: 100,
+    key: 'totalPerfectLandings'
   }
 ];

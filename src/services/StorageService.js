@@ -22,6 +22,7 @@ export class StorageService {
       maxComboReached: 1,
       totalNearMisses: 0,
       totalActionDodges: 0,
+      totalPerfectLandings: 0,
       storyPrologueSeen: false,
       totalMilestones: 0,
       selectedSkin: 'cyber',

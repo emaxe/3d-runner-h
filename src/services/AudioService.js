@@ -348,6 +348,24 @@ export class AudioService {
         break;
       }
 
+      case 'perfect_landing': {
+        // Мягкий резонансный свип 440→880 Гц с экспоненциальным затуханием —
+        // имитация мягкой амортизации и кинетической отдачи при точном приземлении.
+        const dur = 0.22;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(440, t);
+        osc.frequency.exponentialRampToValueAtTime(880, t + dur);
+        gain.gain.setValueAtTime(0.22, t);
+        gain.gain.exponentialRampToValueAtTime(0.01, t + dur);
+        osc.connect(gain);
+        gain.connect(dest);
+        osc.start(t);
+        osc.stop(t + dur);
+        break;
+      }
+
       case 'type_blip': {
         // Мягкий терминальный чирп для эффекта печатной машинки (короткий синус)
         const osc = this.ctx.createOscillator();

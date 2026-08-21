@@ -59,6 +59,15 @@ export const CONFIG = {
   ACTION_DODGE_MAX_CLEARANCE: 1.8, // макс. вертикальный зазор — только плотный проход
   ACTION_DODGE_COMBO_BONUS: 2, // прибавка к comboScoreStreak за Action Dodge
 
+  // Perfect Landing System (точное/мягкое приземление на пол/потолок после флипа/прыжка)
+  PERFECT_LANDING_MAX_VY: 8.0,        // макс. |vy| при касании для идеального приземления (м/с)
+  PERFECT_LANDING_MIN_AIR_TIME: 0.20, // мин. время в воздухе перед касанием (сек)
+  PERFECT_LANDING_SCORE: 75,          // базовые очки (умножаются на combo и 2x powerup)
+  PERFECT_LANDING_COMBO_BONUS: 3,     // прибавка к comboScoreStreak за Perfect Landing
+  PERFECT_LANDING_NITRO_BONUS: 5.0,   // восстановление энергии Nitro
+  PERFECT_LANDING_COOLDOWN: 0.50,     // кулдаун между срабатываниями (сек)
+  PERFECT_LANDING_SHAKE: 0.10,        // сила микро-шейка камеры при мягком касании
+
   // World Events
   BOSS_INTERVAL_METERS: 400,
   BIOME_INTERVAL_METERS: 650,
