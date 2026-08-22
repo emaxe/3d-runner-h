@@ -64,6 +64,7 @@ export class Game {
     this.runMaxCombo = 1;
     this.runMaxNearMissStreak = 0;
     this.runPerfectLandings = 0;
+    this.runTime = 0; // время выживания в забеге (сек), показывается на Game Over
     this.isNewRecord = false;
     this._deathCutsceneTimer = null;
 
@@ -204,6 +205,7 @@ export class Game {
     this.runMaxCombo = 1;
     this.runMaxNearMissStreak = 0;
     this.runPerfectLandings = 0;
+    this.runTime = 0; // время выживания в забеге (сек)
     this.isNewRecord = false;
     const hasStartShield = (this.storage.data.upgrades.shield_start || 0) > 0;
     this.player.reset(hasStartShield);
@@ -381,6 +383,7 @@ export class Game {
             maxCombo: this.runMaxCombo,
             maxNearMissStreak: this.runMaxNearMissStreak,
             perfectLandings: this.runPerfectLandings,
+            runTime: this.runTime,
             level: this.level
           });
         }
@@ -765,6 +768,7 @@ export class Game {
       const deltaZ = effectiveSpeed * dt;
       this.player.z += deltaZ;
       this.distance += deltaZ;
+      this.runTime += dt; // время выживания в забеге
 
       const scoreRate = 10 * (this.player.multiplierTimer > 0 ? 2 : 1) * this.player.combo;
       this.score += scoreRate * dt;

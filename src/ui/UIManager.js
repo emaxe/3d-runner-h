@@ -433,7 +433,7 @@ export class UIManager {
         distance, score, coinsGathered, bestDistance,
         isNewRecord: false, nearMisses: 0, actionDodges: 0,
         milestones: 0, bossesDefeated: 0, maxCombo: 1,
-        maxNearMissStreak: 0, level: 1
+        maxNearMissStreak: 0, runTime: 0, level: 1
       };
     }
 
@@ -472,6 +472,15 @@ export class UIManager {
     if (milestonesEl) milestonesEl.textContent = s.milestones;
     if (levelEl) levelEl.textContent = `LEVEL ${s.level}`;
     if (perfectLandingsEl) perfectLandingsEl.textContent = s.perfectLandings || 0;
+
+    // Время выживания в забеге (формат M:SS)
+    const runTimeEl = document.getElementById('gameover-run-time');
+    if (runTimeEl) {
+      const t = Math.max(0, Math.floor(s.runTime || 0));
+      const mm = Math.floor(t / 60);
+      const ss = t % 60;
+      runTimeEl.textContent = `${mm}:${ss.toString().padStart(2, '0')}`;
+    }
 
     this.updateMenuStats();
   }
