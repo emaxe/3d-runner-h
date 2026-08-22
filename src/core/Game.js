@@ -624,6 +624,7 @@ export class Game {
 
     // Статистика
     this.storage.data.totalPerfectLandings = (this.storage.data.totalPerfectLandings || 0) + 1;
+    this.storage.data.dailyProgress.perfectLandings = (this.storage.data.dailyProgress.perfectLandings || 0) + 1;
     this.runPerfectLandings++;
 
     // Звук и визуальный джуис

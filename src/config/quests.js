@@ -65,5 +65,13 @@ export const QUESTS_CONFIG = [
     unit: 'm',
     reward: 200,
     getValue: (saveData) => Math.floor(saveData.dailyProgress.distance || 0)
+  },
+  {
+    id: 8,
+    title: 'Perform 8 Perfect Landings',
+    target: 8,
+    unit: 'landings',
+    reward: 140,
+    getValue: (saveData) => saveData.dailyProgress.perfectLandings || 0
   }
 ];

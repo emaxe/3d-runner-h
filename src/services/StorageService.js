@@ -49,7 +49,8 @@ export class StorageService {
         nitroUsed: 0,
         bossesDefeated: 0,
         actionDodges: 0,
-        nearMisses: 0
+        nearMisses: 0,
+        perfectLandings: 0
       },
       settings: {
         sfxVolume: 80,
@@ -147,7 +148,8 @@ export class StorageService {
         nitroUsed: 0,
         bossesDefeated: 0,
         actionDodges: 0,
-        nearMisses: 0
+        nearMisses: 0,
+        perfectLandings: 0
       };
       this.save();
       return true;
