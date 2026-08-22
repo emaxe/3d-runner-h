@@ -31,6 +31,7 @@ export class UIManager {
       coins: -1,
       level: -1,
       combo: -1,
+      streak: -1,
       nitroPct: -1,
       nitroState: '',
       bossActive: false,
@@ -269,6 +270,22 @@ export class UIManager {
       const multEl = document.getElementById('hud-multiplier');
       if (multEl) multEl.textContent = `x${player.combo}`;
       this._hudCache.combo = player.combo;
+    }
+
+    // Near-Miss Streak multiplier (x2/x5/x10) — виден в HUD, пока активна серия
+    const streak = player.nearMissStreak || 0;
+    const streakMult = streak >= 10 ? 10 : streak >= 5 ? 5 : streak >= 2 ? 2 : 1;
+    if (streakMult !== this._hudCache.streak) {
+      const streakEl = document.getElementById('hud-streak');
+      if (streakEl) {
+        if (streakMult > 1) {
+          streakEl.textContent = `Streak x${streakMult}`;
+          streakEl.classList.remove('hidden');
+        } else {
+          streakEl.classList.add('hidden');
+        }
+      }
+      this._hudCache.streak = streakMult;
     }
 
     // Nitro Bar
