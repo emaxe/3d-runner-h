@@ -48,6 +48,11 @@ export const CONFIG = {
   NEAR_MISS_Z_WINDOW: 2.2, // окно Z за препятствием для регистрации промаха
   NEAR_MISS_SCORE: 50, // базовые очки за Near Miss (умножаются на combo)
   NEAR_MISS_STREAK_BONUS: 3, // прибавка к comboScoreStreak за Near Miss
+  // Combo reset: удар по щиту (единственный переживаемый удар в забеге) сбрасывает
+  // множитель комбо, иначе достигнув x10 его нельзя потерять и риск/награда исчезает.
+  COMBO_LOST_ON_SHIELD_BREAK: true,
+  COMBO_LOST_ALERT_TITLE: 'COMBO LOST!',
+  COMBO_LOST_ALERT_SUB: 'Множитель сброшен',
   // Near-Miss Streak: серия подряд идущих near-miss с эскалацией награды.
   NEAR_MISS_STREAK_TIERS: [2, 5, 10], // пороги серии для тиров x2/x5/x10
   NEAR_MISS_STREAK_MULTS: [1, 2, 5, 10], // множитель очков по тирам (индекс 0 = до 2 серии)

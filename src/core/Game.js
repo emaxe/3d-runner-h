@@ -430,6 +430,13 @@ export class Game {
       this.player.hasShield = false;
       this.player.invulnerableTimer = 1.0;
       this.player.nearMissStreak = 0; // удар по щиту рвёт серию near-miss
+      // Сброс множителя комбо: удар по щиту — единственный переживаемый удар в забеге.
+      // Без сброса комбо x10 становилось вечным и риск/награда исчезали.
+      if (CONFIG.COMBO_LOST_ON_SHIELD_BREAK && this.player.combo > 1) {
+        this.player.combo = 1;
+        this.player.comboScoreStreak = 0;
+        this.ui.showAlert(CONFIG.COMBO_LOST_ALERT_TITLE, CONFIG.COMBO_LOST_ALERT_SUB);
+      }
       this.audio.playSound('hit');
       this.cameraManager.shake(0.35);
       this.particles.spawn(this.player.x, this.player.y + 0.9, this.player.z, 20, 0x38bdf8, 6);
