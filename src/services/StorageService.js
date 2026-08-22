@@ -50,7 +50,8 @@ export class StorageService {
         bossesDefeated: 0,
         actionDodges: 0,
         nearMisses: 0,
-        perfectLandings: 0
+        perfectLandings: 0,
+        milestones: 0
       },
       settings: {
         sfxVolume: 80,
@@ -149,7 +150,8 @@ export class StorageService {
         bossesDefeated: 0,
         actionDodges: 0,
         nearMisses: 0,
-        perfectLandings: 0
+        perfectLandings: 0,
+        milestones: 0
       };
       this.save();
       return true;

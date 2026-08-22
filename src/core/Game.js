@@ -861,6 +861,7 @@ export class Game {
         this.coinsGathered += coins;
         this.score += scoreBonus * this.player.combo;
         this.storage.data.totalMilestones = (this.storage.data.totalMilestones || 0) + 1;
+        this.storage.data.dailyProgress.milestones = (this.storage.data.dailyProgress.milestones || 0) + 1;
         this.runMilestones++;
         this.ui.showAlert(
           isMajor ? 'MILESTONE!' : `${Math.floor(this.nextMilestoneDistance)}m!`,

@@ -73,5 +73,13 @@ export const QUESTS_CONFIG = [
     unit: 'landings',
     reward: 140,
     getValue: (saveData) => saveData.dailyProgress.perfectLandings || 0
+  },
+  {
+    id: 9,
+    title: 'Reach 6 Milestones',
+    target: 6,
+    unit: 'milestones',
+    reward: 150,
+    getValue: (saveData) => saveData.dailyProgress.milestones || 0
   }
 ];
