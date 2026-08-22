@@ -24,6 +24,8 @@ export class LevelGenerator {
     this.ambientVelocities = null;
     this.ambientPhases = null;
     this.ambientCount = 0;
+    this.ambientBrightness = null;
+    this.currentParticleColor = new THREE.Color(BIOMES[0].particleColor || 0x06b6d4);
     this.lastUpdateT = 0;
     this.lastPlayerZ = 0;
     this.nextBossDistance = 0;
@@ -31,6 +33,7 @@ export class LevelGenerator {
     this.distanceMaterialCache = new Map();
 
     this.initSharedResources();
+    this.initTransitionState();
   }
 
   initSharedResources() {
@@ -227,82 +230,237 @@ export class LevelGenerator {
     this.geos.droneThruster.rotateX(Math.PI);
   }
 
-  setBiome(biomeIndex) {
-    this.currentBiomeIndex = biomeIndex % BIOMES.length;
-    const b = BIOMES[this.currentBiomeIndex];
+  initTransitionState() {
+    this.transition = {
+      active: false,
+      progress: 1.0,
+      duration: CONFIG.BIOME_TRANSITION_DURATION || 2.5,
+      fromColors: {},
+      targetColors: {}
+    };
 
-    this.materials.floor.color.setHex(0x0f172a);
-    this.materials.ceiling.color.setHex(0x090d16);
-    this.materials.laneStripe.color.setHex(b.accentColor);
-    this.materials.archNeon.color.setHex(b.accentColor);
-    this.materials.barrierHazard.color.setHex(b.hazardColor);
-    this.materials.barrierNeonGlow.color.setHex(b.hazardColor);
-    this.materials.spikeTip.color.setHex(b.hazardColor);
+    this.transitionBindings = {
+      floor: this.materials.floor.color,
+      ceiling: this.materials.ceiling.color,
+      laneStripe: this.materials.laneStripe.color,
+      archNeon: this.materials.archNeon.color,
+      barrierHazard: this.materials.barrierHazard.color,
+      barrierNeonGlow: this.materials.barrierNeonGlow.color,
+      spikeTip: this.materials.spikeTip.color,
+      sceneryPrimary: this.materials.sceneryPrimary.color,
+      scenerySecondary: this.materials.scenerySecondary.color,
+      sceneryGlow: this.materials.sceneryGlow.color,
+      sceneryRock: this.materials.sceneryRock.color,
+      neonSignGlowMat: this.materials.neonSignGlowMat.color,
+      glowPillarMat: this.materials.glowPillarMat.color,
+      holoMat: this.materials.holoMat.color,
+      decorSporePodMatColor: this.materials.decorSporePodMat.color,
+      decorSporePodMatEmissive: this.materials.decorSporePodMat.emissive,
+      decorCargoMat: this.materials.decorCargoMat.color,
+      decorSolarSailMat: this.materials.decorSolarSailMat.color,
+      decorEmberMat: this.materials.decorEmberMat.color,
+      decorDataCoreMatColor: this.materials.decorDataCoreMat.color,
+      decorDataCoreMatEmissive: this.materials.decorDataCoreMat.emissive,
+      decorHoloOrbMat: this.materials.decorHoloOrbMat.color,
+      spectatorSuitA: this.materials.spectatorSuitA.color,
+      spectatorSuitB: this.materials.spectatorSuitB.color,
+      spectatorVisor: this.materials.spectatorVisor.color,
+      tribuneNeon: this.materials.tribuneNeon.color
+    };
 
-    // Scenery color shifts per biome
+    this.transitionKeys = Object.keys(this.transitionBindings);
+
+    const defaultTargets = this.getBiomeMaterialTargets(BIOMES[0]);
+    for (let i = 0; i < this.transitionKeys.length; i++) {
+      const key = this.transitionKeys[i];
+      const hex = defaultTargets[key] !== undefined ? defaultTargets[key] : 0xffffff;
+      this.transition.fromColors[key] = new THREE.Color(hex);
+      this.transition.targetColors[key] = new THREE.Color(hex);
+    }
+    this.transition.fromColors.particleColor = new THREE.Color(BIOMES[0].particleColor || 0x06b6d4);
+    this.transition.targetColors.particleColor = new THREE.Color(BIOMES[0].particleColor || 0x06b6d4);
+  }
+
+  getBiomeMaterialTargets(b) {
+    const targets = {
+      floor: 0x0f172a,
+      ceiling: 0x090d16,
+      laneStripe: b.accentColor,
+      archNeon: b.accentColor,
+      barrierHazard: b.hazardColor,
+      barrierNeonGlow: b.hazardColor,
+      spikeTip: b.hazardColor,
+      particleColor: b.particleColor || 0x06b6d4
+    };
+
     if (b.id === 'neon_meadows') {
-      this.materials.sceneryPrimary.color.setHex(0x10b981);
-      this.materials.scenerySecondary.color.setHex(0x06b6d4);
-      this.materials.sceneryGlow.color.setHex(0x34d399);
-      this.materials.sceneryRock.color.setHex(0x334155);
-      this.materials.neonSignGlowMat.color.setHex(0x06b6d4);
-      this.materials.glowPillarMat.color.setHex(0x06b6d4);
-      this.materials.holoMat.color.setHex(0x06b6d4);
-      this.materials.decorSporePodMat.color.setHex(0x34d399);
-      this.materials.decorSporePodMat.emissive.setHex(0x10b981);
-      this.materials.decorHoloOrbMat.color.setHex(0x06b6d4);
-      this.materials.spectatorSuitA.color.setHex(0x10b981);
-      this.materials.spectatorSuitB.color.setHex(0x06b6d4);
-      this.materials.spectatorVisor.color.setHex(0x34d399);
-      this.materials.tribuneNeon.color.setHex(0x06b6d4);
+      targets.sceneryPrimary = 0x10b981;
+      targets.scenerySecondary = 0x06b6d4;
+      targets.sceneryGlow = 0x34d399;
+      targets.sceneryRock = 0x334155;
+      targets.neonSignGlowMat = 0x06b6d4;
+      targets.glowPillarMat = 0x06b6d4;
+      targets.holoMat = 0x06b6d4;
+      targets.decorSporePodMatColor = 0x34d399;
+      targets.decorSporePodMatEmissive = 0x10b981;
+      targets.decorCargoMat = 0x92400e;
+      targets.decorSolarSailMat = 0xfef08a;
+      targets.decorEmberMat = 0xf97316;
+      targets.decorDataCoreMatColor = 0xf43f5e;
+      targets.decorDataCoreMatEmissive = 0x991b1b;
+      targets.decorHoloOrbMat = 0x06b6d4;
+      targets.spectatorSuitA = 0x10b981;
+      targets.spectatorSuitB = 0x06b6d4;
+      targets.spectatorVisor = 0x34d399;
+      targets.tribuneNeon = 0x06b6d4;
     } else if (b.id === 'solar_dunes') {
-      this.materials.sceneryPrimary.color.setHex(0xd97706);
-      this.materials.scenerySecondary.color.setHex(0xf59e0b);
-      this.materials.sceneryGlow.color.setHex(0xfef08a);
-      this.materials.sceneryRock.color.setHex(0x78350f);
-      this.materials.neonSignGlowMat.color.setHex(0xfbbf24);
-      this.materials.glowPillarMat.color.setHex(0xfbbf24);
-      this.materials.holoMat.color.setHex(0xfbbf24);
-      this.materials.decorCargoMat.color.setHex(0x92400e);
-      this.materials.decorSolarSailMat.color.setHex(0xfef08a);
-      this.materials.decorHoloOrbMat.color.setHex(0xfbbf24);
-      this.materials.spectatorSuitA.color.setHex(0xd97706);
-      this.materials.spectatorSuitB.color.setHex(0xf59e0b);
-      this.materials.spectatorVisor.color.setHex(0xfef08a);
-      this.materials.tribuneNeon.color.setHex(0xfbbf24);
+      targets.sceneryPrimary = 0xd97706;
+      targets.scenerySecondary = 0xf59e0b;
+      targets.sceneryGlow = 0xfef08a;
+      targets.sceneryRock = 0x78350f;
+      targets.neonSignGlowMat = 0xfbbf24;
+      targets.glowPillarMat = 0xfbbf24;
+      targets.holoMat = 0xfbbf24;
+      targets.decorSporePodMatColor = 0x34d399;
+      targets.decorSporePodMatEmissive = 0x10b981;
+      targets.decorCargoMat = 0x92400e;
+      targets.decorSolarSailMat = 0xfef08a;
+      targets.decorEmberMat = 0xf97316;
+      targets.decorDataCoreMatColor = 0xf43f5e;
+      targets.decorDataCoreMatEmissive = 0x991b1b;
+      targets.decorHoloOrbMat = 0xfbbf24;
+      targets.spectatorSuitA = 0xd97706;
+      targets.spectatorSuitB = 0xf59e0b;
+      targets.spectatorVisor = 0xfef08a;
+      targets.tribuneNeon = 0xfbbf24;
     } else if (b.id === 'glacial_peaks') {
-      this.materials.sceneryPrimary.color.setHex(0x38bdf8);
-      this.materials.scenerySecondary.color.setHex(0xa5f3fc);
-      this.materials.sceneryGlow.color.setHex(0xe0f2fe);
-      this.materials.sceneryRock.color.setHex(0x1e293b);
-      this.materials.neonSignGlowMat.color.setHex(0xa5f3fc);
-      this.materials.glowPillarMat.color.setHex(0x38bdf8);
-      this.materials.holoMat.color.setHex(0xa5f3fc);
-      this.materials.decorHoloOrbMat.color.setHex(0x38bdf8);
-      this.materials.spectatorSuitA.color.setHex(0x0284c7);
-      this.materials.spectatorSuitB.color.setHex(0x38bdf8);
-      this.materials.spectatorVisor.color.setHex(0xa5f3fc);
-      this.materials.tribuneNeon.color.setHex(0x38bdf8);
+      targets.sceneryPrimary = 0x38bdf8;
+      targets.scenerySecondary = 0xa5f3fc;
+      targets.sceneryGlow = 0xe0f2fe;
+      targets.sceneryRock = 0x1e293b;
+      targets.neonSignGlowMat = 0xa5f3fc;
+      targets.glowPillarMat = 0x38bdf8;
+      targets.holoMat = 0xa5f3fc;
+      targets.decorSporePodMatColor = 0x34d399;
+      targets.decorSporePodMatEmissive = 0x10b981;
+      targets.decorCargoMat = 0x92400e;
+      targets.decorSolarSailMat = 0xfef08a;
+      targets.decorEmberMat = 0xf97316;
+      targets.decorDataCoreMatColor = 0xf43f5e;
+      targets.decorDataCoreMatEmissive = 0x991b1b;
+      targets.decorHoloOrbMat = 0x38bdf8;
+      targets.spectatorSuitA = 0x0284c7;
+      targets.spectatorSuitB = 0x38bdf8;
+      targets.spectatorVisor = 0xa5f3fc;
+      targets.tribuneNeon = 0x38bdf8;
     } else {
       // Cyber Volcano
-      this.materials.sceneryPrimary.color.setHex(0x7f1d1d);
-      this.materials.scenerySecondary.color.setHex(0xf43f5e);
-      this.materials.sceneryGlow.color.setHex(0xfacc15);
-      this.materials.sceneryRock.color.setHex(0x18000a);
-      this.materials.neonSignGlowMat.color.setHex(0xf43f5e);
-      this.materials.glowPillarMat.color.setHex(0xfacc15);
-      this.materials.holoMat.color.setHex(0xf43f5e);
-      this.materials.decorEmberMat.color.setHex(0xf97316);
-      this.materials.decorDataCoreMat.color.setHex(0xf43f5e);
-      this.materials.decorDataCoreMat.emissive.setHex(0x991b1b);
-      this.materials.decorHoloOrbMat.color.setHex(0xf43f5e);
-      this.materials.spectatorSuitA.color.setHex(0x991b1b);
-      this.materials.spectatorSuitB.color.setHex(0xf43f5e);
-      this.materials.spectatorVisor.color.setHex(0xfacc15);
-      this.materials.tribuneNeon.color.setHex(0xf43f5e);
+      targets.sceneryPrimary = 0x7f1d1d;
+      targets.scenerySecondary = 0xf43f5e;
+      targets.sceneryGlow = 0xfacc15;
+      targets.sceneryRock = 0x18000a;
+      targets.neonSignGlowMat = 0xf43f5e;
+      targets.glowPillarMat = 0xfacc15;
+      targets.holoMat = 0xf43f5e;
+      targets.decorSporePodMatColor = 0x34d399;
+      targets.decorSporePodMatEmissive = 0x10b981;
+      targets.decorCargoMat = 0x92400e;
+      targets.decorSolarSailMat = 0xfef08a;
+      targets.decorEmberMat = 0xf97316;
+      targets.decorDataCoreMatColor = 0xf43f5e;
+      targets.decorDataCoreMatEmissive = 0x991b1b;
+      targets.decorHoloOrbMat = 0xf43f5e;
+      targets.spectatorSuitA = 0x991b1b;
+      targets.spectatorSuitB = 0xf43f5e;
+      targets.spectatorVisor = 0xfacc15;
+      targets.tribuneNeon = 0xf43f5e;
     }
 
-    this.initAtmosphericParticles(this.lastPlayerZ || 0);
+    return targets;
+  }
+
+  setBiome(biomeIndex, instant = false) {
+    this.currentBiomeIndex = biomeIndex % BIOMES.length;
+    const b = BIOMES[this.currentBiomeIndex];
+    const targetMap = this.getBiomeMaterialTargets(b);
+
+    for (let i = 0; i < this.transitionKeys.length; i++) {
+      const key = this.transitionKeys[i];
+      const hex = targetMap[key];
+      if (hex !== undefined) {
+        this.transition.targetColors[key].setHex(hex);
+      }
+    }
+    this.transition.targetColors.particleColor.setHex(b.particleColor || 0x06b6d4);
+
+    if (instant) {
+      this.transition.active = false;
+      this.transition.progress = 1.0;
+      for (let i = 0; i < this.transitionKeys.length; i++) {
+        const key = this.transitionKeys[i];
+        const targetProp = this.transitionBindings[key];
+        if (targetProp) {
+          targetProp.copy(this.transition.targetColors[key]);
+        }
+      }
+      this.currentParticleColor.copy(this.transition.targetColors.particleColor);
+      this.initAtmosphericParticles(this.lastPlayerZ || 0);
+    } else {
+      for (let i = 0; i < this.transitionKeys.length; i++) {
+        const key = this.transitionKeys[i];
+        const targetProp = this.transitionBindings[key];
+        if (targetProp) {
+          this.transition.fromColors[key].copy(targetProp);
+        }
+      }
+      this.transition.fromColors.particleColor.copy(this.currentParticleColor);
+      this.transition.progress = 0.0;
+      this.transition.duration = CONFIG.BIOME_TRANSITION_DURATION || 2.5;
+      this.transition.active = true;
+    }
+  }
+
+  updateBiomeTransition(dt) {
+    if (!this.transition.active) return;
+
+    this.transition.progress += dt / this.transition.duration;
+    if (this.transition.progress >= 1.0) {
+      this.transition.progress = 1.0;
+      this.transition.active = false;
+    }
+
+    const t = this.transition.progress;
+    // Smooth ease-in-out S-curve
+    const ease = t * t * (3 - 2 * t);
+
+    for (let i = 0; i < this.transitionKeys.length; i++) {
+      const key = this.transitionKeys[i];
+      const targetProp = this.transitionBindings[key];
+      if (targetProp) {
+        targetProp.lerpColors(this.transition.fromColors[key], this.transition.targetColors[key], ease);
+      }
+    }
+
+    // Atmospheric particle vertex colors smooth lerp
+    if (this.ambientGeo && this.ambientCount > 0 && this.ambientBrightness) {
+      const colAttr = this.ambientGeo.getAttribute('color');
+      if (colAttr) {
+        const colors = colAttr.array;
+        this.currentParticleColor.lerpColors(
+          this.transition.fromColors.particleColor,
+          this.transition.targetColors.particleColor,
+          ease
+        );
+        for (let i = 0; i < this.ambientCount; i++) {
+          const idx = i * 3;
+          const br = this.ambientBrightness[i];
+          colors[idx] = this.currentParticleColor.r * br;
+          colors[idx + 1] = this.currentParticleColor.g * br;
+          colors[idx + 2] = this.currentParticleColor.b * br;
+        }
+        colAttr.needsUpdate = true;
+      }
+    }
   }
 
   initAtmosphericParticles(playerZ = this.lastPlayerZ || 0) {
@@ -315,13 +473,16 @@ export class LevelGenerator {
     const colors = new Float32Array(count * 3);
     const velocities = new Float32Array(count * 3);
     const phases = new Float32Array(count);
+    const brightnesses = new Float32Array(count);
 
     const baseColor = new THREE.Color(biome.particleColor || 0x06b6d4);
+    this.currentParticleColor.copy(baseColor);
     const railX = CONFIG.LANE_WIDTH * 1.5 + 0.5;
 
     for (let i = 0; i < count; i++) {
       const idx = i * 3;
       const brightness = 0.7 + Math.random() * 0.3;
+      brightnesses[i] = brightness;
       colors[idx] = baseColor.r * brightness;
       colors[idx + 1] = baseColor.g * brightness;
       colors[idx + 2] = baseColor.b * brightness;
@@ -347,6 +508,7 @@ export class LevelGenerator {
 
     this.ambientVelocities = velocities;
     this.ambientPhases = phases;
+    this.ambientBrightness = brightnesses;
     this.ambientCount = count;
   }
 
@@ -1639,6 +1801,9 @@ export class LevelGenerator {
     const now = performance.now();
     const dt = this.lastUpdateT ? Math.min(Math.max((now - this.lastUpdateT) / 1000, 0), 0.1) : 0.016;
     this.lastUpdateT = now;
+
+    // Per-frame smooth biome material color transition
+    this.updateBiomeTransition(dt);
 
     if (this.activeChunks.length > 0) {
       const firstChunk = this.activeChunks[0];

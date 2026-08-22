@@ -76,6 +76,7 @@ export const CONFIG = {
   // World Events
   BOSS_INTERVAL_METERS: 400,
   BIOME_INTERVAL_METERS: 650,
+  BIOME_TRANSITION_DURATION: 2.5, // Длительность плавного перехода цветов биома (сек)
 
   // Level progression (после каждого босса — новый уровень с усложнением)
   LEVEL_BOSS_INTERVAL_DECREASE: 25, // на сколько метров сокращается дистанция до босса за уровень

@@ -81,5 +81,13 @@ export const QUESTS_CONFIG = [
     unit: 'milestones',
     reward: 150,
     getValue: (saveData) => saveData.dailyProgress.milestones || 0
+  },
+  {
+    id: 10,
+    title: 'Build a 5x Near-Miss Streak',
+    target: 5,
+    unit: 'streaks',
+    reward: 160,
+    getValue: (saveData) => saveData.dailyProgress.nearMissStreaks || 0
   }
 ];

@@ -230,8 +230,8 @@ export class Game {
     }
 
     this.levelGen.initTrack(this.nextBossDistance);
-    this.levelGen.setBiome(0);
-    this.engine.setBiomeVisuals(BIOMES[0]);
+    this.levelGen.setBiome(0, true);
+    this.engine.setBiomeVisuals(BIOMES[0], true);
     // Сброс босса при старте забега (защита от Boss Persistence Exploit)
     this.boss.reset();
     this.audio.bossMusicMode = false;
@@ -556,6 +556,14 @@ export class Game {
     this.player.nearMissStreak++;
     if (this.player.nearMissStreak > this.runMaxNearMissStreak) {
       this.runMaxNearMissStreak = this.player.nearMissStreak;
+    }
+    // Lifetime-статистика максимальной серии (для ачивок Hot Streak / Untouchable)
+    if (this.player.nearMissStreak > (this.storage.data.maxNearMissStreak || 0)) {
+      this.storage.data.maxNearMissStreak = this.player.nearMissStreak;
+    }
+    // Суточный квест: каждый раз, когда серия достигает тира x5, засчитываем "построенную серию"
+    if (this.player.nearMissStreak === CONFIG.NEAR_MISS_STREAK_TIERS[1]) {
+      this.storage.data.dailyProgress.nearMissStreaks = (this.storage.data.dailyProgress.nearMissStreaks || 0) + 1;
     }
     const streakMult = this._getStreakMultiplier();
 
@@ -985,6 +993,7 @@ export class Game {
       this.player.model.animate({ isGrounded: true }, t, 0.4);
     }
 
+    this.engine.update(dt);
     this.engine.render();
     requestAnimationFrame(this._boundLoop);
   }

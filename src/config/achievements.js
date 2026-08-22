@@ -91,6 +91,22 @@ export const ACHIEVEMENTS = [
     key: 'totalNearMisses'
   },
   {
+    id: 'streak_5',
+    name: 'Hot Streak',
+    desc: 'Reach a 5x Near-Miss Streak multiplier',
+    reward: 150,
+    target: 5,
+    key: 'maxNearMissStreak'
+  },
+  {
+    id: 'streak_10',
+    name: 'Untouchable',
+    desc: 'Reach a 10x Near-Miss Streak multiplier',
+    reward: 400,
+    target: 10,
+    key: 'maxNearMissStreak'
+  },
+  {
     id: 'milestone_5',
     name: 'Waypoint Pioneer',
     desc: 'Reach 5 milestone checkpoints',

@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { BIOMES } from '../config/biomes.js';
+import { CONFIG } from '../config/gameConfig.js';
 
 /**
  * Engine - Core Three.js WebGL renderer, scene hierarchy, lighting, and quality profile management.
@@ -46,8 +47,39 @@ export class Engine {
     this.initLighting();
     this.initStarfield();
 
+    // Biome color transition state (pre-allocated to prevent heap churn in animation loop)
+    this.initTransitionState();
+
     // Resize listener
     window.addEventListener('resize', () => this.onWindowResize());
+  }
+
+  initTransitionState() {
+    const defaultBiome = BIOMES[0];
+    this.transition = {
+      active: false,
+      progress: 1.0,
+      duration: CONFIG.BIOME_TRANSITION_DURATION || 2.5,
+      fromSky: new THREE.Color(defaultBiome.skyColor),
+      fromFog: new THREE.Color(defaultBiome.fogColor),
+      fromFogDensity: defaultBiome.fogDensity || 0.015,
+      fromDirLight: new THREE.Color(defaultBiome.lightColor || 0xffffff),
+      fromRimLight: new THREE.Color(defaultBiome.accentColor || 0x38bdf8),
+      fromRimIntensity: 0.55,
+      fromHemiSky: new THREE.Color(defaultBiome.lightColor || 0x38bdf8),
+      fromHemiGround: new THREE.Color(defaultBiome.groundColor || 0x0f172a),
+      fromStars: new THREE.Color(defaultBiome.accentColor || 0xffffff),
+
+      targetSky: new THREE.Color(defaultBiome.skyColor),
+      targetFog: new THREE.Color(defaultBiome.fogColor),
+      targetFogDensity: defaultBiome.fogDensity || 0.015,
+      targetDirLight: new THREE.Color(defaultBiome.lightColor || 0xffffff),
+      targetRimLight: new THREE.Color(defaultBiome.accentColor || 0x38bdf8),
+      targetRimIntensity: 0.55,
+      targetHemiSky: new THREE.Color(defaultBiome.lightColor || 0x38bdf8),
+      targetHemiGround: new THREE.Color(defaultBiome.groundColor || 0x0f172a),
+      targetStars: new THREE.Color(defaultBiome.accentColor || 0xffffff)
+    };
   }
 
   initStarfield() {
@@ -129,18 +161,82 @@ export class Engine {
     return this.renderer.getPixelRatio();
   }
 
-  setBiomeVisuals(biome) {
-    this.scene.background.setHex(biome.skyColor);
-    this.scene.fog.color.setHex(biome.fogColor);
-    this.scene.fog.density = biome.fogDensity || 0.015;
-    this.dirLight.color.setHex(biome.lightColor || 0xffffff);
-    this.rimLight.color.setHex(biome.accentColor || 0x38bdf8);
-    this.rimLight.intensity = biome.id === 'cyber_volcano' ? 0.7 : 0.55;
-    this.hemiLight.color.setHex(biome.lightColor || 0x38bdf8);
-    this.hemiLight.groundColor.setHex(biome.groundColor || 0x0f172a);
-    // Синхронизируем цвет звездного поля с акцентом биома (лёгкий оттенок)
-    if (this.stars && this.stars.material.color) {
-      this.stars.material.color.setHex(biome.accentColor || 0xffffff);
+  setBiomeVisuals(biome, instant = false) {
+    const skyColor = biome.skyColor;
+    const fogColor = biome.fogColor;
+    const fogDensity = biome.fogDensity !== undefined ? biome.fogDensity : 0.015;
+    const dirLightColor = biome.lightColor || 0xffffff;
+    const rimLightColor = biome.accentColor || 0x38bdf8;
+    const rimIntensity = biome.id === 'cyber_volcano' ? 0.7 : 0.55;
+    const hemiSkyColor = biome.lightColor || 0x38bdf8;
+    const hemiGroundColor = biome.groundColor || 0x0f172a;
+    const starsColor = biome.accentColor || 0xffffff;
+
+    this.transition.targetSky.setHex(skyColor);
+    this.transition.targetFog.setHex(fogColor);
+    this.transition.targetFogDensity = fogDensity;
+    this.transition.targetDirLight.setHex(dirLightColor);
+    this.transition.targetRimLight.setHex(rimLightColor);
+    this.transition.targetRimIntensity = rimIntensity;
+    this.transition.targetHemiSky.setHex(hemiSkyColor);
+    this.transition.targetHemiGround.setHex(hemiGroundColor);
+    this.transition.targetStars.setHex(starsColor);
+
+    if (instant) {
+      this.transition.active = false;
+      this.transition.progress = 1.0;
+      this.scene.background.copy(this.transition.targetSky);
+      this.scene.fog.color.copy(this.transition.targetFog);
+      this.scene.fog.density = this.transition.targetFogDensity;
+      this.dirLight.color.copy(this.transition.targetDirLight);
+      this.rimLight.color.copy(this.transition.targetRimLight);
+      this.rimLight.intensity = this.transition.targetRimIntensity;
+      this.hemiLight.color.copy(this.transition.targetHemiSky);
+      this.hemiLight.groundColor.copy(this.transition.targetHemiGround);
+      if (this.stars && this.stars.material && this.stars.material.color) {
+        this.stars.material.color.copy(this.transition.targetStars);
+      }
+    } else {
+      this.transition.fromSky.copy(this.scene.background);
+      this.transition.fromFog.copy(this.scene.fog.color);
+      this.transition.fromFogDensity = this.scene.fog.density;
+      this.transition.fromDirLight.copy(this.dirLight.color);
+      this.transition.fromRimLight.copy(this.rimLight.color);
+      this.transition.fromRimIntensity = this.rimLight.intensity;
+      this.transition.fromHemiSky.copy(this.hemiLight.color);
+      this.transition.fromHemiGround.copy(this.hemiLight.groundColor);
+      if (this.stars && this.stars.material && this.stars.material.color) {
+        this.transition.fromStars.copy(this.stars.material.color);
+      }
+      this.transition.progress = 0.0;
+      this.transition.duration = CONFIG.BIOME_TRANSITION_DURATION || 2.5;
+      this.transition.active = true;
+    }
+  }
+
+  update(dt = 0.016) {
+    if (!this.transition.active) return;
+
+    this.transition.progress += dt / this.transition.duration;
+    if (this.transition.progress >= 1.0) {
+      this.transition.progress = 1.0;
+      this.transition.active = false;
+    }
+
+    const t = this.transition.progress;
+    // Smooth ease-in-out S-curve
+    const ease = t * t * (3 - 2 * t);
+
+    this.scene.background.lerpColors(this.transition.fromSky, this.transition.targetSky, ease);
+    this.scene.fog.color.lerpColors(this.transition.fromFog, this.transition.targetFog, ease);
+    this.scene.fog.density = THREE.MathUtils.lerp(this.transition.fromFogDensity, this.transition.targetFogDensity, ease);
+    this.dirLight.color.lerpColors(this.transition.fromDirLight, this.transition.targetDirLight, ease);
+    this.rimLight.color.lerpColors(this.transition.fromRimLight, this.transition.targetRimLight, ease);
+    this.rimLight.intensity = THREE.MathUtils.lerp(this.transition.fromRimIntensity, this.transition.targetRimIntensity, ease);
+    this.hemiLight.color.lerpColors(this.transition.fromHemiSky, this.transition.targetHemiSky, ease);
+    this.hemiLight.groundColor.lerpColors(this.transition.fromHemiGround, this.transition.targetHemiGround, ease);
+    if (this.stars && this.stars.material && this.stars.material.color) {
+      this.stars.material.color.lerpColors(this.transition.fromStars, this.transition.targetStars, ease);
     }
   }
 

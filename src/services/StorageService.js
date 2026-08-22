@@ -21,6 +21,7 @@ export class StorageService {
       totalNitroUsed: 0,
       maxComboReached: 1,
       totalNearMisses: 0,
+      maxNearMissStreak: 0,
       totalActionDodges: 0,
       totalPerfectLandings: 0,
       storyPrologueSeen: false,
@@ -50,6 +51,7 @@ export class StorageService {
         bossesDefeated: 0,
         actionDodges: 0,
         nearMisses: 0,
+        nearMissStreaks: 0,
         perfectLandings: 0,
         milestones: 0
       },
@@ -150,6 +152,7 @@ export class StorageService {
         bossesDefeated: 0,
         actionDodges: 0,
         nearMisses: 0,
+        nearMissStreaks: 0,
         perfectLandings: 0,
         milestones: 0
       };
