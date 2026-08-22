@@ -109,7 +109,8 @@ export const CONFIG = {
   BOSS_WARNING_WINDOW_METERS: 150,      // за сколько метров до босса появляются столбы-предупреждения
   BOSS_WARNING_AHEAD_MIN: 100,          // мин. дистанция до босса, на которой ещё стоят предупреждающие столбы
   BOSS_WARNING_PILLAR_INTERVAL: 25,     // интервал между парами предупреждающих столбов
-  BOSS_WARNING_OFFSET_X: 5.4            // отступ предупреждающих столбов по X (вне зоны бега)
+  BOSS_WARNING_OFFSET_X: 5.4,            // отступ предупреждающих столбов по X (вне зоны бега)
+  BOSS_APPROACH_HUD_WINDOW: 400          // за сколько метров до босса HUD показывает счётчик "BOSS IN X m"
 };
 
 export const COIN_TYPES = {

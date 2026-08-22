@@ -1,4 +1,5 @@
 import { SKINS } from '../config/skins.js';
+import { CONFIG } from '../config/gameConfig.js';
 import { ShopModal } from './ShopModal.js';
 import { AchievementsModal } from './AchievementsModal.js';
 import { QuestsModal } from './QuestsModal.js';
@@ -36,6 +37,7 @@ export class UIManager {
       nitroState: '',
       bossActive: false,
       bossHp: -1,
+      bossApproach: -1,
       powerups: ''
     };
 
@@ -239,7 +241,7 @@ export class UIManager {
     if (flavor) this.showAlert(flavor.title, flavor.subtitle);
   }
 
-  updateHUD(distance, coins, player, boss, level = 1) {
+  updateHUD(distance, coins, player, boss, level = 1, nextBossDistance = 0) {
     // Distance
     const d = Math.floor(distance);
     if (d !== this._hudCache.distance) {
@@ -354,6 +356,29 @@ export class UIManager {
 
         this._hudCache.bossHp = pct;
       }
+    }
+
+    // Boss Approach Counter: "BOSS IN X m" — виден, пока босс не активен и до него
+    // меньше BOSS_APPROACH_HUD_WINDOW метров (дополняет столбы-предупреждения вне трассы).
+    let approachVal = -1;
+    if (!isBossActive && typeof nextBossDistance === 'number' && nextBossDistance > 0) {
+      const remaining = Math.max(0, Math.floor(nextBossDistance - distance));
+      if (remaining > 0 && remaining <= CONFIG.BOSS_APPROACH_HUD_WINDOW) {
+        approachVal = remaining;
+      }
+    }
+    if (approachVal !== this._hudCache.bossApproach) {
+      const bossApproach = document.getElementById('hud-boss-approach');
+      const bossApproachDist = document.getElementById('hud-boss-approach-dist');
+      if (bossApproach && bossApproachDist) {
+        if (approachVal > 0) {
+          bossApproachDist.textContent = `${approachVal} m`;
+          bossApproach.classList.remove('hidden');
+        } else {
+          bossApproach.classList.add('hidden');
+        }
+      }
+      this._hudCache.bossApproach = approachVal;
     }
 
     // Powerups List

@@ -961,7 +961,7 @@ export class Game {
       this.hudTimer += dt;
       if (this.hudTimer >= 0.05) {
         this.hudTimer = 0;
-        this.ui.updateHUD(this.distance, this.coinsGathered, this.player, this.boss, this.level);
+        this.ui.updateHUD(this.distance, this.coinsGathered, this.player, this.boss, this.level, this.nextBossDistance);
       }
     } else if (this.state === 'GAMEOVER') {
       const dtSlow = dt * 0.75;

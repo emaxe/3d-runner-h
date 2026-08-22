@@ -159,6 +159,15 @@
         <div id="hud-powerups-list" class="flex items-center space-x-2">
           <!-- Populated dynamically -->
         </div>
+
+        <!-- Boss Approach Counter (показывает, сколько метров до следующего босса) -->
+        <div id="hud-boss-approach" class="hidden glass-panel self-start px-3 py-1 rounded-xl border-rose-500/40 flex items-center space-x-2">
+          <svg class="w-4 h-4 text-rose-400 animate-pulse" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M10 2l1.4 4.1a4 4 0 002.5 2.5L18 10l-4.1 1.4a4 4 0 00-2.5 2.5L10 18l-1.4-4.1a4 4 0 00-2.5-2.5L2 10l4.1-1.4a4 4 0 002.5-2.5L10 2z"/>
+          </svg>
+          <span class="text-[10px] uppercase font-bold tracking-widest text-rose-400">Boss</span>
+          <span id="hud-boss-approach-dist" class="font-gaming text-sm font-bold text-rose-300">—</span>
+        </div>
       </div>
 
       <!-- Dynamic Floating HUD Alert Toast (Compact & Non-intrusive) -->
