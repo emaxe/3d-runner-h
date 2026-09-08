@@ -207,8 +207,8 @@ export class Game {
     this.runPerfectLandings = 0;
     this.runTime = 0; // время выживания в забеге (сек)
     this.isNewRecord = false;
-    const hasStartShield = (this.storage.data.upgrades.shield_start || 0) > 0;
-    this.player.reset(hasStartShield);
+    // Уровень Guardian Shield = число стартовых зарядов щита (1..3).
+    this.player.reset(this.storage.data.upgrades.shield_start || 0);
     // Применяем уровень апгрейда "Hyper Nitro Tank" (длительность буста и перезарядка)
     this.player.setNitroUpgradeLevel(this.storage.data.upgrades.nitro_eff || 0);
 
@@ -430,7 +430,7 @@ export class Game {
           obs.hitbox.maxY = -999;
         }
       }
-      this.player.hasShield = false;
+      this.player.shieldCharges -= 1;
       this.player.invulnerableTimer = 1.0;
       this.player.nearMissStreak = 0; // удар по щиту рвёт серию near-miss
       // Сброс множителя комбо: удар по щиту — единственный переживаемый удар в забеге.
@@ -443,7 +443,11 @@ export class Game {
       this.audio.playSound('hit');
       this.cameraManager.shake(0.35);
       this.particles.spawn(this.player.x, this.player.y + 0.9, this.player.z, 20, 0x38bdf8, 6);
-      this.ui.showAlert('SHIELD BROKEN!', 'Damage Absorbed');
+      if (this.player.shieldCharges > 0) {
+        this.ui.showAlert('SHIELD HIT', `${this.player.shieldCharges} charge${this.player.shieldCharges > 1 ? 's' : ''} left`);
+      } else {
+        this.ui.showAlert('SHIELD BROKEN!', 'Damage Absorbed');
+      }
       return;
     }
 
@@ -521,8 +525,9 @@ export class Game {
 
     switch (p.type) {
       case 'shield':
-        this.player.hasShield = true;
-        this.ui.showAlert('ENERGY SHIELD', 'Protected against 1 hit');
+        // Подбор щита: +1 заряд, но не больше стакового максимума (3).
+        this.player.shieldCharges = Math.min(3, this.player.shieldCharges + 1);
+        this.ui.showAlert('ENERGY SHIELD', '+1 shield charge');
         break;
       case 'magnet':
         this.player.magnetTimer = 8.0 + magnetLevel * 2.5;
@@ -898,7 +903,7 @@ export class Game {
           this.runBossesDefeated++;
           this.coinsGathered += 100;
           this.score += 2000 * this.player.combo;
-          this.player.hasShield = true;
+          this.player.shieldCharges = Math.min(3, this.player.shieldCharges + 1);
           this.player.nitroEnergy = CONFIG.NITRO_MAX_ENERGY;
           this.ui.showAlert('BOSS DEFEATED!', '+100 Coins & Shield Boost');
           this.cameraManager.shake(0.6);

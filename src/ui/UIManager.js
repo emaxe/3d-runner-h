@@ -382,20 +382,21 @@ export class UIManager {
     }
 
     // Powerups List
-    const hasShield = Boolean(player.hasShield);
+    const shieldCharges = player.shieldCharges | 0;
+    const hasShield = shieldCharges > 0;
     const mag = player.magnetTimer > 0 ? Math.ceil(player.magnetTimer) : 0;
     const mult = player.multiplierTimer > 0 ? Math.ceil(player.multiplierTimer) : 0;
     const slow = player.slowmoTimer > 0 ? Math.ceil(player.slowmoTimer) : 0;
     const ghost = player.ghostTimer > 0 ? Math.ceil(player.ghostTimer) : 0;
     const od = player.overdriveTimer > 0 ? Math.ceil(player.overdriveTimer) : 0;
-    const powerupsHash = `${hasShield ? 1 : 0}_${mag}_${mult}_${slow}_${ghost}_${od}`;
+    const powerupsHash = `${shieldCharges}_${mag}_${mult}_${slow}_${ghost}_${od}`;
 
     if (powerupsHash !== this._hudCache.powerups) {
       const pList = document.getElementById('hud-powerups-list');
       if (pList) {
         let html = '';
         if (hasShield) {
-          html += `<div class="px-2.5 py-1 rounded-xl bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 text-xs font-bold font-gaming flex items-center space-x-1"><span>🛡️</span><span>SHIELD</span></div>`;
+          html += `<div class="px-2.5 py-1 rounded-xl bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 text-xs font-bold font-gaming flex items-center space-x-1"><span>🛡️</span><span>SHIELD${shieldCharges > 1 ? ` ×${shieldCharges}` : ''}</span></div>`;
         }
         if (mag > 0) {
           html += `<div class="px-2.5 py-1 rounded-xl bg-rose-500/20 text-rose-300 border border-rose-500/40 text-xs font-bold font-gaming flex items-center space-x-1"><span>🧲</span><span>${mag}s</span></div>`;

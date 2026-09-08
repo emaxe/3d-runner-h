@@ -5,7 +5,7 @@ export const UPGRADES = [
   {
     id: 'shield_start',
     name: 'Guardian Shield',
-    desc: 'Start each run with an energy shield',
+    desc: 'Start each run with an energy shield (+1 hit charge per level)',
     maxLevel: 3,
     costs: [100, 250, 600],
     icon: '🛡️'

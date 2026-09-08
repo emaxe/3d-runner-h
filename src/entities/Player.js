@@ -30,7 +30,7 @@ export class Player {
     this.doubleJumpCooldown = 0;
 
     // Powerups & Buffs
-    this.hasShield = false;
+    this.shieldCharges = 0;
     this.magnetTimer = 0;
     this.multiplierTimer = 0;
     this.slowmoTimer = 0;
@@ -77,7 +77,12 @@ export class Player {
     this._animState = { isGrounded: false, isSliding: false, isDead: false, ghostTimer: 0, overdriveTimer: 0 };
   }
 
-  reset(startWithShield = false) {
+  // hasShield — производный флаг от зарядов щита (запись запрещена: только shieldCharges).
+  get hasShield() {
+    return this.shieldCharges > 0;
+  }
+
+  reset(startShieldCharges = 0) {
     this.currentLane = 1;
     this.targetX = 0;
     this.x = 0;
@@ -94,8 +99,8 @@ export class Player {
     this.canDoubleJump = true;
     this.doubleJumpCooldown = 0;
 
-    this.hasShield = startWithShield;
-    this.model.shieldMesh.visible = startWithShield;
+    this.shieldCharges = Math.max(0, startShieldCharges | 0);
+    this.model.shieldMesh.visible = this.shieldCharges > 0;
     this.magnetTimer = 0;
     this.multiplierTimer = 0;
     this.slowmoTimer = 0;
