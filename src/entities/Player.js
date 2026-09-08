@@ -137,7 +137,7 @@ export class Player {
 
   setLane(lane) {
     if (this.isDead) return;
-    this.currentLane = Math.max(0, Math.min(2, lane));
+    this.currentLane = Math.max(0, Math.min(CONFIG.LANES_COUNT - 1, lane));
     this.targetX = (1 - this.currentLane) * CONFIG.LANE_WIDTH;
   }
 
@@ -546,10 +546,10 @@ export class Player {
    */
   _checkPerfectLanding(impactVy, surfaceY) {
     // Сброс накопителя времени в воздухе при каждом касании
-    const wasAirborne = this.airTimer > 0;
+    const airTime = this.airTimer;
     this.airTimer = 0;
 
-    if (!wasAirborne) return; // не был в воздухе — не приземление
+    if (airTime < CONFIG.PERFECT_LANDING_MIN_AIR_TIME) return; // слишком короткий полёт — не засчитываем
     if (this.perfectLandingCooldown > 0) return; // кулдаун
     if (Math.abs(impactVy) > CONFIG.PERFECT_LANDING_MAX_VY) return; // жёсткий удар
     if (this.onLandingCallback) {

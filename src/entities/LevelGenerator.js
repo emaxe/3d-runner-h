@@ -1273,7 +1273,8 @@ export class LevelGenerator {
    * on both sides of the track ahead of an approaching boss encounter.
    */
   spawnBossWarningPillars(chunkGroup, zPos, warningStart, warningEnd) {
-    const offsets = [12.5, 37.5];
+    // Интервал пары предупреждающих столбов задан конфигом (был захардкожен 12.5/37.5).
+    const offsets = [12.5, 12.5 + CONFIG.BOSS_WARNING_PILLAR_INTERVAL];
     const sides = [-CONFIG.BOSS_WARNING_OFFSET_X, CONFIG.BOSS_WARNING_OFFSET_X];
 
     for (let i = 0; i < offsets.length; i++) {
