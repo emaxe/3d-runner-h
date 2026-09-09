@@ -16,7 +16,7 @@ export class Player {
     this.currentLane = 1; // 0 = Left, 1 = Center, 2 = Right
     this.targetX = 0;
     this.x = 0;
-    this.y = 0.9;
+    this.y = CONFIG.FLOOR_Y + 0.9;
     this.z = 0;
     this.vy = 0;
 
@@ -86,7 +86,7 @@ export class Player {
     this.currentLane = 1;
     this.targetX = 0;
     this.x = 0;
-    this.y = 0.9;
+    this.y = CONFIG.FLOOR_Y + 0.9;
     this.z = 0;
     this.vy = 0;
     this.gravityDirection = 1;
@@ -324,14 +324,14 @@ export class Player {
     }
 
     // 4. Floor & Ceiling Boundaries
-    const floorStandY = 0.9;
+    const floorStandY = CONFIG.FLOOR_Y + 0.9;
     const ceilingStandY = CONFIG.CEILING_HEIGHT - 0.9;
     const maxHeadCeilingY = CONFIG.CEILING_HEIGHT - 0.95;
-    const minHeadFloorY = 0.95;
+    const minHeadFloorY = CONFIG.FLOOR_Y + 0.95;
 
     if (this.gravityDirection === 1) {
       if (this.y <= floorStandY) {
-        this._checkPerfectLanding(this.vy, 0.9);
+        this._checkPerfectLanding(this.vy, CONFIG.FLOOR_Y + 0.9);
         this.y = floorStandY;
         this.vy = 0;
         this.isGrounded = true;
@@ -422,7 +422,7 @@ export class Player {
 
     // 6b. Running dust puffs
     if (this.isGrounded && !this.isSliding && Math.random() < 0.15) {
-      const dustY = this.gravityDirection === 1 ? 0.1 : CONFIG.CEILING_HEIGHT - 0.1;
+      const dustY = this.gravityDirection === 1 ? CONFIG.FLOOR_Y + 0.1 : CONFIG.CEILING_HEIGHT - 0.1;
       this.particles.spawn(
         this.x + (Math.random() - 0.5) * 0.3,
         dustY,
@@ -456,7 +456,7 @@ export class Player {
 
     // 6d. Slide sparks
     if (this.isSliding && this.isGrounded && Math.random() < 0.3) {
-      const sparkY = this.gravityDirection === 1 ? 0.1 : CONFIG.CEILING_HEIGHT - 0.1;
+      const sparkY = this.gravityDirection === 1 ? CONFIG.FLOOR_Y + 0.1 : CONFIG.CEILING_HEIGHT - 0.1;
       this.particles.spawn(
         this.x + (Math.random() - 0.5) * 0.4,
         sparkY,
