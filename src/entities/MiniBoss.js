@@ -656,8 +656,10 @@ export class MiniBoss {
 
     const speed = this._getProjSpeed(36);
     const targetZ = player.z;
-    const targetLowY = 0.9;
-    const targetHighY = 4.7;
+    // Высоты стоек игрока — тот же источник, что floorStandY/ceilingStandY
+    // в Player.js (после рефактора FLOOR_Y литералы здесь рассинхронизировались бы).
+    const targetLowY = CONFIG.FLOOR_Y + 0.9;
+    const targetHighY = CONFIG.CEILING_HEIGHT - 0.9;
 
     const dirLow = this._computeDir(sxL, syL, szL, player.x, targetLowY, targetZ, speed);
     this._spawnProjectile(sxL, syL, szL, dirLow.vx, dirLow.vy, dirLow.vz, 2.5, this.muzzleL);
