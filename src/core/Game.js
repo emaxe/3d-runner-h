@@ -578,7 +578,7 @@ export class Game {
     this.score += scoreGain;
 
     // Буст комбо-стрика (приближает к следующему xN)
-    this.player.comboScoreStreak = Math.min(9, this.player.comboScoreStreak + CONFIG.NEAR_MISS_STREAK_BONUS);
+    this.player.comboScoreStreak = Math.min(10, this.player.comboScoreStreak + CONFIG.NEAR_MISS_STREAK_BONUS);
     if (this.player.comboScoreStreak >= 10 && this.player.combo < 10) {
       this.player.combo++;
       this.player.comboScoreStreak = 0;
@@ -623,7 +623,7 @@ export class Game {
     this.score += scoreGain;
 
     // Буст комбо-стрика (приближает к следующему xN)
-    this.player.comboScoreStreak = Math.min(9, this.player.comboScoreStreak + CONFIG.PERFECT_LANDING_COMBO_BONUS);
+    this.player.comboScoreStreak = Math.min(10, this.player.comboScoreStreak + CONFIG.PERFECT_LANDING_COMBO_BONUS);
     if (this.player.comboScoreStreak >= 10 && this.player.combo < 10) {
       this.player.combo++;
       this.player.comboScoreStreak = 0;
@@ -695,7 +695,7 @@ export class Game {
     this.score += scoreGain;
 
     // Буст комбо-стрика (чуть меньше, чем у Near Miss, т.к. встречается чаще)
-    this.player.comboScoreStreak = Math.min(9, this.player.comboScoreStreak + CONFIG.ACTION_DODGE_COMBO_BONUS);
+    this.player.comboScoreStreak = Math.min(10, this.player.comboScoreStreak + CONFIG.ACTION_DODGE_COMBO_BONUS);
     if (this.player.comboScoreStreak >= 10 && this.player.combo < 10) {
       this.player.combo++;
       this.player.comboScoreStreak = 0;
