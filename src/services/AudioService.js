@@ -380,6 +380,22 @@ export class AudioService {
         osc.stop(t + 0.02);
         break;
       }
+
+      case 'ui_click': {
+        // Короткий мягкий клик интерфейса: нисходящий триангл-чирп 780→520 Гц
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(780, t);
+        osc.frequency.exponentialRampToValueAtTime(520, t + 0.045);
+        gain.gain.setValueAtTime(0.09, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
+        osc.connect(gain);
+        gain.connect(dest);
+        osc.start(t);
+        osc.stop(t + 0.05);
+        break;
+      }
     }
   }
 

@@ -50,6 +50,7 @@ export class UIManager {
     // Menu buttons
     const btnPlay = document.getElementById('btn-play-game');
     if (btnPlay) btnPlay.addEventListener('click', () => {
+      this.game.audio.playSound('ui_click');
       if (this.game.storage.data.storyPrologueSeen) {
         this.game.startGame();
       } else {
@@ -58,17 +59,18 @@ export class UIManager {
     });
 
     const btnPause = document.getElementById('btn-pause-game');
-    if (btnPause) btnPause.addEventListener('click', () => this.game.pauseGame());
+    if (btnPause) btnPause.addEventListener('click', () => { this.game.audio.playSound('ui_click'); this.game.pauseGame(); });
 
     const btnResume = document.getElementById('btn-resume-game');
-    if (btnResume) btnResume.addEventListener('click', () => this.game.resumeGame());
+    if (btnResume) btnResume.addEventListener('click', () => { this.game.audio.playSound('ui_click'); this.game.resumeGame(); });
 
     const btnRestart = document.getElementById('btn-restart-game');
-    if (btnRestart) btnRestart.addEventListener('click', () => this.game.startGame());
+    if (btnRestart) btnRestart.addEventListener('click', () => { this.game.audio.playSound('ui_click'); this.game.startGame(); });
 
     const btnPauseMenu = document.getElementById('btn-pause-menu');
     if (btnPauseMenu) {
       btnPauseMenu.addEventListener('click', () => {
+        this.game.audio.playSound('ui_click');
         document.getElementById('pause-screen')?.classList.add('hidden');
         document.getElementById('hud-screen')?.classList.add('hidden');
         document.getElementById('menu-screen')?.classList.remove('hidden');
@@ -79,6 +81,7 @@ export class UIManager {
     const btnGameOverMenu = document.getElementById('btn-gameover-menu');
     if (btnGameOverMenu) {
       btnGameOverMenu.addEventListener('click', () => {
+        this.game.audio.playSound('ui_click');
         document.getElementById('gameover-screen')?.classList.add('hidden');
         document.getElementById('menu-screen')?.classList.remove('hidden');
         this.game.setMenuState();
@@ -86,7 +89,7 @@ export class UIManager {
     }
 
     const btnGameOverRetry = document.getElementById('btn-gameover-retry');
-    if (btnGameOverRetry) btnGameOverRetry.addEventListener('click', () => this.game.startGame());
+    if (btnGameOverRetry) btnGameOverRetry.addEventListener('click', () => { this.game.audio.playSound('ui_click'); this.game.startGame(); });
   }
 
   initSkinSelector() {
@@ -108,6 +111,7 @@ export class UIManager {
 
     if (btnPrevSkin) {
       btnPrevSkin.addEventListener('click', () => {
+        this.game.audio.playSound('ui_click');
         this.currentSkinIndex = (this.currentSkinIndex - 1 + SKINS.length) % SKINS.length;
         updateDisplay();
       });
@@ -115,6 +119,7 @@ export class UIManager {
 
     if (btnNextSkin) {
       btnNextSkin.addEventListener('click', () => {
+        this.game.audio.playSound('ui_click');
         this.currentSkinIndex = (this.currentSkinIndex + 1) % SKINS.length;
         updateDisplay();
       });
@@ -129,12 +134,14 @@ export class UIManager {
 
       if (openBtn && modal) {
         openBtn.addEventListener('click', () => {
+          this.game.audio.playSound('ui_click');
           modal.classList.remove('hidden');
           if (onOpen) onOpen();
         });
       }
       if (closeBtn && modal) {
         closeBtn.addEventListener('click', () => {
+          this.game.audio.playSound('ui_click');
           modal.classList.add('hidden');
           this.updateMenuStats();
         });
@@ -143,6 +150,7 @@ export class UIManager {
 
     bindModal('btn-open-shop', 'btn-close-shop', 'shop-modal', () => this.shop.render());
     document.getElementById('btn-done-shop')?.addEventListener('click', () => {
+      this.game.audio.playSound('ui_click');
       document.getElementById('shop-modal')?.classList.add('hidden');
       this.updateMenuStats();
     });
@@ -151,26 +159,31 @@ export class UIManager {
       this.achievements.render()
     );
     document.getElementById('btn-done-achievements')?.addEventListener('click', () => {
+      this.game.audio.playSound('ui_click');
       document.getElementById('achievements-modal')?.classList.add('hidden');
     });
 
     bindModal('btn-open-quests', 'btn-close-quests', 'quests-modal', () => this.quests.render());
     document.getElementById('btn-done-quests')?.addEventListener('click', () => {
+      this.game.audio.playSound('ui_click');
       document.getElementById('quests-modal')?.classList.add('hidden');
     });
 
     bindModal('btn-open-settings', 'btn-close-settings', 'settings-modal');
     document.getElementById('btn-done-settings')?.addEventListener('click', () => {
+      this.game.audio.playSound('ui_click');
       document.getElementById('settings-modal')?.classList.add('hidden');
     });
 
     bindModal('btn-open-tutorial', 'btn-close-tutorial', 'tutorial-modal');
     document.getElementById('btn-done-tutorial')?.addEventListener('click', () => {
+      this.game.audio.playSound('ui_click');
       document.getElementById('tutorial-modal')?.classList.add('hidden');
     });
 
     bindModal('btn-open-story', 'btn-close-story', 'story-modal', () => this.story.render());
     document.getElementById('btn-done-story')?.addEventListener('click', () => {
+      this.game.audio.playSound('ui_click');
       document.getElementById('story-modal')?.classList.add('hidden');
     });
   }
