@@ -591,7 +591,7 @@ export class MiniBoss {
     const startZ = this.group.position.z + cannon.position.z - 0.6;
 
     const targetX = player.x;
-    const targetY = player.y + 0.9;
+    const targetY = player.y;
     const targetZ = player.z;
     const speed = this._getProjSpeed(36);
 
@@ -605,7 +605,7 @@ export class MiniBoss {
     const startY = this.group.position.y;
     const startZ = this.group.position.z - 0.6;
 
-    const targetY = player.y + 0.9;
+    const targetY = player.y;
     const targetZ = player.z;
     const speed = this._getProjSpeed(34);
     const lanes = [-CONFIG.LANE_WIDTH, 0, CONFIG.LANE_WIDTH];
@@ -629,7 +629,7 @@ export class MiniBoss {
     const syR = this.group.position.y + this.cannonR.position.y;
     const szR = this.group.position.z + this.cannonR.position.z - 0.6;
 
-    const targetY = player.y + 0.9;
+    const targetY = player.y;
     const targetZ = player.z;
     const speed = this._getProjSpeed(38);
 

@@ -442,7 +442,7 @@ export class Game {
       }
       this.audio.playSound('hit');
       this.cameraManager.shake(0.35);
-      this.particles.spawn(this.player.x, this.player.y + 0.9, this.player.z, 20, 0x38bdf8, 6);
+      this.particles.spawn(this.player.x, this.player.y, this.player.z, 20, 0x38bdf8, 6);
       if (this.player.shieldCharges > 0) {
         this.ui.showAlert('SHIELD HIT', `${this.player.shieldCharges} charge${this.player.shieldCharges > 1 ? 's' : ''} left`);
       } else {
@@ -881,7 +881,7 @@ export class Game {
           `+${coins} Coins & +${scoreBonus} Score`
         );
         this.audio.playSound(isMajor ? 'powerup' : 'coin');
-        this.particles.spawn(this.player.x, this.player.y + 0.9, this.player.z, 10, isMajor ? 0xffe600 : 0x38bdf8, 4);
+        this.particles.spawn(this.player.x, this.player.y, this.player.z, 10, isMajor ? 0xffe600 : 0x38bdf8, 4);
         if (isMajor) this.cameraManager.shake(CONFIG.MILESTONE_MAJOR_SHAKE);
         this.nextMilestoneDistance += CONFIG.MILESTONE_INTERVAL;
       }

@@ -399,6 +399,9 @@ export class UIManager {
     const hasShield = shieldCharges > 0;
     const mag = player.magnetTimer > 0 ? Math.ceil(player.magnetTimer) : 0;
     const mult = player.multiplierTimer > 0 ? Math.ceil(player.multiplierTimer) : 0;
+    // Вечный буст (score_booster ставит 999999) показываем как ∞, а не «999999s».
+    // ponytail: порог 999 — sentinel-контракт с Game.js (multiplierTimer = 999999).
+    const multPerm = mult >= 999;
     const slow = player.slowmoTimer > 0 ? Math.ceil(player.slowmoTimer) : 0;
     const ghost = player.ghostTimer > 0 ? Math.ceil(player.ghostTimer) : 0;
     const od = player.overdriveTimer > 0 ? Math.ceil(player.overdriveTimer) : 0;
@@ -415,7 +418,7 @@ export class UIManager {
           html += `<div class="px-2.5 py-1 rounded-xl bg-rose-500/20 text-rose-300 border border-rose-500/40 text-xs font-bold font-gaming flex items-center space-x-1"><span>🧲</span><span>${mag}s</span></div>`;
         }
         if (mult > 0) {
-          html += `<div class="px-2.5 py-1 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs font-bold font-gaming flex items-center space-x-1"><span>⭐ x2</span><span>${mult}s</span></div>`;
+          html += `<div class="px-2.5 py-1 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs font-bold font-gaming flex items-center space-x-1"><span>⭐ x2</span><span>${multPerm ? '∞' : `${mult}s`}</span></div>`;
         }
         if (slow > 0) {
           html += `<div class="px-2.5 py-1 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-xs font-bold font-gaming flex items-center space-x-1"><span>⏳ SLOW</span><span>${slow}s</span></div>`;
