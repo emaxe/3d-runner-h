@@ -184,6 +184,12 @@ export class ShopModal {
         this.game.storage.data.selectedSkin = skinId;
         this.game.storage.save();
         this.game.player.model.applySkin(skin);
+        // Синхронизируем селектор скинов в меню и озвучиваем действие
+        this.game.audio.playSound('ui_click');
+        const idx = SKINS.findIndex((s) => s.id === skinId);
+        if (idx >= 0 && this.game.ui) this.game.ui.currentSkinIndex = idx;
+        const skinNameEl = document.getElementById('menu-skin-name');
+        if (skinNameEl && skin) skinNameEl.textContent = skin.name;
         this.render();
       });
     });
