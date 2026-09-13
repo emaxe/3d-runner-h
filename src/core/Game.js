@@ -161,7 +161,32 @@ export class Game {
     if (skinNameEl) skinNameEl.textContent = skin.name;
   }
 
+  /**
+   * Финансовый коммит забега: монеты, статистика, дневной прогресс квестов,
+   * рекорд и ачивки — с безусловным save(). updateBestDistance/checkAchievements
+   * внутри сохраняют только при рекорде/разблокировке, поэтому без явного save()
+   * заработанное жило бы лишь в RAM и терялось при закрытии вкладки.
+   * Вызывается из gameOver(), а также при выходе в меню/рестарте из паузы —
+   * иначе прерванный забег обнулялся без выплаты монет.
+   * @returns {boolean} новый рекорд дистанции
+   */
+  commitRun() {
+    this.storage.data.runsCompleted++;
+    this.storage.data.totalCoins += this.coinsGathered;
+    this.storage.data.coins += this.coinsGathered;
+    // Суточный прогресс квестов: дистанция и монеты за забег
+    this.storage.data.dailyProgress.distance += Math.floor(this.distance);
+    this.storage.data.dailyProgress.coins += Math.floor(this.coinsGathered);
+    const newRecord = this.storage.updateBestDistance(this.distance);
+    this.checkAchievements();
+    this.storage.save();
+    return newRecord;
+  }
+
   setMenuState() {
+    // Выход в меню из паузы: незавершённый забег тоже коммитим (иначе монеты
+    // и прогресс квеста сгорают). Из GAMEOVER/CUTSCENE уже закоммичено в gameOver.
+    if (this.state === 'PAUSED') this.commitRun();
     this.state = 'MENU';
     // Скрыть активную кат-сцену и сбросить таймер смерти при возврате в меню
     this.ui.cutscene.hide();
@@ -181,6 +206,9 @@ export class Game {
   }
 
   startGame() {
+    // Рестарт с экрана паузы: текущий забег ещё не закоммичен (gameOver не
+    // вызывался) — коммитим монеты/прогресс до сброса this.coinsGathered.
+    if (this.state === 'PAUSED') this.commitRun();
     this.state = 'PLAYING';
     // Очистка таймера кат-сцены смерти (защита от ретрая во время задержки)
     if (this._deathCutsceneTimer) {
@@ -345,15 +373,7 @@ export class Game {
     this.particles.spawn(this.player.x, this.player.y, this.player.z, 20, 0xf59e0b, 7, 0.25, 0.6);
     this.player.startDeathTumble(this.runSpeed);
 
-    // Save statistics & highscore
-    this.storage.data.runsCompleted++;
-    this.storage.data.totalCoins += this.coinsGathered;
-    this.storage.data.coins += this.coinsGathered;
-    // Суточный прогресс квестов: дистанция и монеты за забег
-    this.storage.data.dailyProgress.distance += Math.floor(this.distance);
-    this.storage.data.dailyProgress.coins += Math.floor(this.coinsGathered);
-    this.isNewRecord = this.storage.updateBestDistance(this.distance);
-    this.checkAchievements();
+    this.isNewRecord = this.commitRun();
 
     // Кат-сцена смерти: после короткой паузы (death tumble) показать драматичную
     // вставку, и только затем — экран статистики.
